@@ -1,0 +1,27 @@
+name: 🚀 Deploy React App to SiteGround via SSH
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install dependencies & build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Setup SSH and deploy with rsync
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p 18765 ssh.vistasql.com >> ~/.ssh/known_hosts
+          rsync -avz -e "ssh -p 18765" ./build/ u2745-gx48k1bmxwyj@ssh.vistasql.com:~/public_html/
