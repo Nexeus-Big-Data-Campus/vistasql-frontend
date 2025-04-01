@@ -1,8 +1,14 @@
 import React, { useState } from "react";
 import SQLEditor from "../components/SQLEditor";
+import QueryDisplay from "../components/QueryDisplay";
 
 export default function MainEditor() {
+    const [queryTree, setQueryTree] = useState({});
+
     return (
-        <SQLEditor/>
+        <div clas="p-2">
+            <SQLEditor queryTree={queryTree} onQueryTreeChanged={setQueryTree}/>
+            <QueryDisplay queryTree={queryTree}/>
+        </div>
     );
 }

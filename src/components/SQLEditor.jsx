@@ -1,21 +1,19 @@
-import React, { useState } from "react";
+import React, { Children, useState } from "react";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
 import "prismjs/components/prism-sql";
-import "prismjs/plugins/line-numbers/prism-line-numbers.css"; 
+import QueryParser from '../services/QueryParser/QueryParser';
 
-const SQL_PATTERNS = [
-    { regex: /\b(SELECT|FROM|WHERE|ORDER BY)\b/gi, className: "text-indigo-600" },
-];
-
-export default function SQLEditor() {
+export default function SQLEditor({ queryTree, onQueryTreeChanged }) {
     const [code, setCode] = useState('SELECT * FROM users;');
 
-    // Add a custom class to all keywords found in the code
-    // TODO: Find and higlight all subqueries
-    const highlightQueries = (code) => {
-        let highlightedCode = highlight(code, languages.sql, "sql");
+    const SQL_PATTERNS = [
+        { regex: /\b(SELECT|FROM|WHERE|ORDER BY)\b/gi, className: "text-indigo-600" },
+    ];
 
+    // Add a custom class to all keywords found in the code
+    const highlightQueries = (code) => {
+        let highlightedCode = highlight(code, languages.sql, 'sql');
         SQL_PATTERNS.forEach(({ regex, className }) => {
             highlightedCode = highlightedCode.replace(
                 regex,
@@ -26,16 +24,24 @@ export default function SQLEditor() {
         return highlightedCode;
     }
 
+    const onCodeChange = (code) => {
+        setCode(code);
+        queryTree = QueryParser.parseQuery(code);
+        onQueryTreeChanged(queryTree);
+    }
+
     return (
         <Editor
             value={code}
-            onValueChange={(code) => setCode(code)}
+            onValueChange={onCodeChange}
             highlight={highlightQueries}
             padding={10}
             style={{
                 fontFamily: '"Fira code", "Fira Mono", monospace',
                 fontSize: 14,
-              }}
+                border: '1px solid',
+                borderRadius: '5px'
+            }}
         />
     );
 }
