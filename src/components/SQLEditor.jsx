@@ -8,7 +8,7 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }) {
     const [code, setCode] = useState('SELECT * FROM users;');
 
     const SQL_PATTERNS = [
-        { regex: /\b(SELECT|FROM|WHERE|ORDER BY)\b/gi, className: "text-indigo-600" },
+        { regex: /\b(SELECT|FROM|WHERE|ORDER BY|WITH|AS|LIKE)\b/gi, className: "text-indigo-600" },
     ];
 
     // Add a custom class to all keywords found in the code
@@ -28,10 +28,12 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }) {
         setCode(code);
         queryTree = QueryParser.parseQuery(code);
         onQueryTreeChanged(queryTree);
+        console.log(queryTree);
     }
 
     return (
         <Editor
+            class="rounded"
             value={code}
             onValueChange={onCodeChange}
             highlight={highlightQueries}
@@ -40,7 +42,6 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }) {
                 fontFamily: '"Fira code", "Fira Mono", monospace',
                 fontSize: 14,
                 border: '1px solid',
-                borderRadius: '5px'
             }}
         />
     );

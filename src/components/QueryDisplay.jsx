@@ -7,7 +7,7 @@ export default function QueryDisplay ({queryTree}) {
     }
 
     return (
-        <div className="query-container mt-2 pb-2 border-1">
+        <div className="query-container mt-2 pb-2 border-1 rounded">
             <header class="w-full bg-indigo-600 p-2 text-white">
                 <div>{queryTree.name}</div>
             </header>

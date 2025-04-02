@@ -1,7 +1,7 @@
 import murmur from "murmurhash-js";
 
-const SQL_SUBQUERY_REGEX = /(\s*(WITH|,)?\s+[\w]+\s+AS)?\s*\(\s*SELECT[\s\S]+?\)/gi;
-const SQL_QUERY_NAMING_REGEX = /\s*(WITH|,)?\s+[\w]+\s+AS/gi
+const SQL_SUBQUERY_REGEX = /(\s*[\w]+\s+AS)?\s*\(\s*SELECT[\s\S]+?\)/gi;
+const SQL_QUERY_NAMING_REGEX = /\s*[\w]+\s+AS/gi
 
 // Return a tree with structure:
 // {name: "query", code: "SELECT...", hash: 1234, children: []}
@@ -16,7 +16,7 @@ function parseQuery(code) {
     if (!subqueriesMatches) {
         // Remove naming fragment
         const name = getQueryName(code) ?? hash;
-        code = code.replace(SQL_QUERY_NAMING_REGEX, '').trim();
+        code = cleanCode(code);
         return {name, code, hash};
     }
 
@@ -28,27 +28,20 @@ function parseQuery(code) {
     });
 
     const name = getQueryName(code) ?? hash;
-
-    // Remove naming fragment
-    code = code.replace(SQL_QUERY_NAMING_REGEX, '').trim();
-
     // Replace children code for hash
     query.children.forEach((child, i) => {
-        code = code.replace(`{${i}}`, `{${child.name}}\n`);
+        code = code.replace(`{${i}}`, ` {${child.name}}`);
     });
+    code = cleanCode(code);
 
     return {...query, code, name};
 }
 
-function removeOuterParentheses(code) {
-    let firstOpen = code.indexOf('(');
-    let lastClose = code.lastIndexOf(')');
-    
-    if (firstOpen === -1 || lastClose === -1 || firstOpen > lastClose) {
-        return code;
-    }
-
-    return code.slice(0, firstOpen) + code.slice(firstOpen + 1, lastClose) + code.slice(lastClose + 1);
+function cleanCode(code) {
+    return code
+        .replace(SQL_QUERY_NAMING_REGEX, '')
+        .replace(')', '')
+        .trim();
 }
 
 // Extract name from named subqueries
