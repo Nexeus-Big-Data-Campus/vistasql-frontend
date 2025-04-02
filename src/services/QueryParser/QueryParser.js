@@ -14,27 +14,21 @@ function parseQuery(code) {
     const subqueriesMatches = code.match(SQL_SUBQUERY_REGEX);
 
     if (!subqueriesMatches) {
-        // Remove naming fragment
-        const name = getQueryName(code) ?? hash;
-        code = cleanCode(code);
-        return {name, code, hash};
+        return {name: getQueryName(code) ?? hash, code: cleanCode(code), hash};
     }
 
     const query = {hash, children: []};
     subqueriesMatches.forEach((subQuery, i) => {
         code = code.replace(subQuery, `{${i}}`);
-        const subQueryCode = removeOuterParentheses(subQuery);
-        query.children.push(parseQuery(subQueryCode)); 
+        query.children.push(parseQuery(subQuery.replace('(', ''))); 
     });
 
-    const name = getQueryName(code) ?? hash;
     // Replace children code for hash
     query.children.forEach((child, i) => {
         code = code.replace(`{${i}}`, ` {${child.name}}`);
     });
-    code = cleanCode(code);
 
-    return {...query, code, name};
+    return {...query, code: cleanCode(code), name: getQueryName(code) ?? hash};
 }
 
 function cleanCode(code) {

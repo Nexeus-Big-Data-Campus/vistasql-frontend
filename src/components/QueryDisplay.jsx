@@ -15,7 +15,7 @@ export default function QueryDisplay ({queryTree}) {
             <div class="p-2">
             {queryTree.children?.length > 0 && (
                 queryTree.children.map(child => 
-                    <QueryDisplay queryTree={child} />
+                    <QueryDisplay queryTree={child} key={child.hash} />
                 )
             )}
             </div>
