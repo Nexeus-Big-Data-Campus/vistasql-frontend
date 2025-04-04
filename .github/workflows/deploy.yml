@@ -23,5 +23,16 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+
+          # Añadir host a known_hosts
           ssh-keyscan -p 18765 ssh.vistasql.com >> ~/.ssh/known_hosts
+
+          # Ver contenido, borrar Default.html y limpiar carpeta public_html
+          echo "🔍 Comprobando contenido en SiteGround antes de borrar..."
+          ssh -p 18765 u2745-gx48k1bmxwyj@ssh.vistasql.com "ls -la public_html"
+
+          echo "🧹 Borrando contenido anterior..."
+          ssh -p 18765 u2745-gx48k1bmxwyj@ssh.vistasql.com "rm -f public_html/Default.html && rm -rf public_html/* && mkdir -p public_html"
+
+          echo "📦 Subiendo nueva versión..."
           rsync -avz -e "ssh -p 18765" ./build/ u2745-gx48k1bmxwyj@ssh.vistasql.com:~/public_html/
