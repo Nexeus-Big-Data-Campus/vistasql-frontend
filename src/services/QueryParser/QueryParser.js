@@ -36,7 +36,7 @@ function buildQueryNode(query, code, hash) {
         ...query,
         hash,
         code: cleanCode(code),
-        name: getQueryName(code) ?? hash,
+        name: getQueryName(code) ?? 'SELECT',
         fields: getFields(code),
     };
 }
@@ -68,7 +68,9 @@ function getFields(code) {
         return [];
     }
 
-    const fields = fieldSection[0].replace(/SELECT\s+/i, '').replace('FROM', '');
+    const fields = fieldSection[0]
+        .replace(/SELECT\s+/i, '')
+        .replace('FROM', '');
     
     return fields
         .split(',')

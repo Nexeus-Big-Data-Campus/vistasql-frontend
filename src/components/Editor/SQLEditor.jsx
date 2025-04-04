@@ -2,7 +2,7 @@ import React, { Children, useState } from "react";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
 import "prismjs/components/prism-sql";
-import QueryParser from '../services/QueryParser/QueryParser';
+import QueryParser from "../../utils/QueryParser";
 
 export default function SQLEditor({ queryTree, onQueryTreeChanged }) {
     const [code, setCode] = useState('SELECT * FROM users;');
