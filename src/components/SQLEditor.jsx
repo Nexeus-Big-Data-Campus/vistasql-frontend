@@ -33,7 +33,7 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }) {
 
     return (
         <Editor
-            class="rounded"
+            className="rounded"
             value={code}
             onValueChange={onCodeChange}
             highlight={highlightQueries}

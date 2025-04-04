@@ -6,7 +6,7 @@ export default function MainEditor() {
     const [queryTree, setQueryTree] = useState({});
 
     return (
-        <div class="p-2">
+        <div className="p-2">
             <SQLEditor queryTree={queryTree} onQueryTreeChanged={setQueryTree}/>
             <QueryDisplay queryTree={queryTree}/>
         </div>

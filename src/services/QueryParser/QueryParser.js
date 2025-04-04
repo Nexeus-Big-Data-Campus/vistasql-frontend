@@ -14,7 +14,7 @@ function parseQuery(code) {
     const subqueriesMatches = code.match(SQL_SUBQUERY_REGEX);
 
     if (!subqueriesMatches) {
-        return {name: getQueryName(code) ?? hash, code: cleanCode(code), hash};
+        return buildQueryNode({children: []}, code, hash);
     }
 
     const query = {hash, children: []};
@@ -28,7 +28,17 @@ function parseQuery(code) {
         code = code.replace(`{${i}}`, ` {${child.name}}`);
     });
 
-    return {...query, code: cleanCode(code), name: getQueryName(code) ?? hash};
+    return buildQueryNode(query, code, hash);
+}
+
+function buildQueryNode(query, code, hash) {
+    return {
+        ...query,
+        hash,
+        code: cleanCode(code),
+        name: getQueryName(code) ?? hash,
+        fields: getFields(code),
+    };
 }
 
 function cleanCode(code) {
@@ -49,6 +59,22 @@ function getQueryName(code) {
         .replace(/\s*(WITH|,)\n*\s*/gi, '')
         .replace(/\s+AS/gi, '')
         .trim();
+}
+
+// Extract fields from select
+function getFields(code) {
+    const fieldSection = code.match(/SELECT\s+(.*?)\s+FROM/gi);
+    if (!fieldSection) {
+        return [];
+    }
+
+    const fields = fieldSection[0].replace(/SELECT\s+/i, '').replace('FROM', '');
+    
+    return fields
+        .split(',')
+        .map(field => field.replace(/\s*\w+\s+AS\s+/gi, ''))
+        .map(field => field.trim())
+        .filter(field => field.length > 0);
 }
 
 export default {parseQuery};
