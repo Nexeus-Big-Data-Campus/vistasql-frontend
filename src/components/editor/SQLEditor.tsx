@@ -3,8 +3,14 @@ import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
 import QueryParser from '../../services/QueryParser/QueryParser';
 import "prismjs/components/prism-sql";
+import { QueryNode } from "../../interfaces/query";
 
-export default function SQLEditor({ queryTree, onQueryTreeChanged }) {
+interface Props {
+    queryTree: QueryNode;
+    onQueryTreeChanged: (queryTree: QueryNode) => void;
+}
+
+export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
     const [code, setCode] = useState('SELECT * FROM users;');
 
     const SQL_PATTERNS = [
@@ -15,27 +21,34 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }) {
         updateQueryTree(code);
     }, []);
 
-    const highlightQueries = (code) => {
+    const highlightQueries = (code: string) => {
         let highlightedCode = highlight(code, languages.sql, 'sql');
         
         // Add a custom class to all keywords found in the code
         SQL_PATTERNS.forEach(({ regex, className }) => {
             highlightedCode = highlightedCode.replace(
                 regex,
-                (match) => `<span class="${className}">${match}</span>`
+                (match: string) => `<span class="${className}">${match}</span>`
             );
         });
 
         return highlightedCode;
     }
 
-    const onCodeChange = (code) => {
+    const onCodeChange = (code: string) => {
         setCode(code);
         updateQueryTree(code);
     }
 
-    const updateQueryTree = (code) => {
-        queryTree = QueryParser.parseQuery(code);
+    const updateQueryTree = (code: string) => {
+        const parsedQuery = QueryParser.parseQuery(code);
+
+        if (!parsedQuery) {
+            console.error("Error parsing query");
+            return;
+        }
+
+        queryTree = parsedQuery;
         onQueryTreeChanged(queryTree);
     }
 

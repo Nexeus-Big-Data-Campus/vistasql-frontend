@@ -3,9 +3,18 @@ import SQLEditor from "../components/editor/SQLEditor";
 import QueryDisplay from "../components/display/QueryDisplay";
 import Header from "../components/Header";
 import Grid from "@mui/material/Grid";
+import { QueryNode } from "../interfaces/query";
+
+const initialQueryTree: QueryNode = {
+    name: 'SELECT',
+    hash: '',
+    children: [],
+    fields: [],
+    code: 'SELECT'
+}
 
 export default function MainEditor() {
-    const [queryTree, setQueryTree] = useState({});
+    const [queryTree, setQueryTree] = useState<QueryNode>(initialQueryTree);
 
     return (
         <main className="flex flex-col h-full">

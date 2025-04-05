@@ -1,47 +1,51 @@
 import murmur from "murmurhash-js";
+import { QueryNode } from "../../interfaces/query";
 
 const SQL_SUBQUERY_REGEX = /(\s*[\w]+\s+AS)?\s*\(\s*SELECT[\s\S]+?\)/gi;
 const SQL_QUERY_NAMING_REGEX = /\s*[\w]+\s+AS/gi
 
 // Return a tree with structure:
 // {name: "query", code: "SELECT...", hash: 1234, children: []}
-function parseQuery(code) {
+function parseQuery(code: string): QueryNode | null {
     if(!code) {
-        return [];
+        return null;
     }
 
     const hash = murmur.murmur3(code);
     const subqueriesMatches = code.match(SQL_SUBQUERY_REGEX);
 
     if (!subqueriesMatches) {
-        return buildQueryNode({children: []}, code, hash);
+        return buildQueryNode(code, hash, []);
     }
 
-    const query = {hash, children: []};
+    const children: QueryNode[] = [];
     subqueriesMatches.forEach((subQuery, i) => {
         code = code.replace(subQuery, `{${i}}`);
-        query.children.push(parseQuery(subQuery.replace('(', ''))); 
+        const child = parseQuery(subQuery.replace('(', ''));
+        if (child) {
+            children.push(child); 
+        }
     });
 
     // Replace children code for hash
-    query.children.forEach((child, i) => {
+    children.forEach((child, i) => {
         code = code.replace(`{${i}}`, ` {${child.name}}`);
     });
 
-    return buildQueryNode(query, code, hash);
+    return buildQueryNode(code, hash, children);
 }
 
-function buildQueryNode(query, code, hash) {
+function buildQueryNode(code: string, hash: string, children: QueryNode[]): QueryNode {
     return {
-        ...query,
         hash,
         code: cleanCode(code),
         name: getQueryName(code) ?? 'SELECT',
         fields: getFields(code),
+        children
     };
 }
 
-function cleanCode(code) {
+function cleanCode(code: string) {
     return code
         .replace(SQL_QUERY_NAMING_REGEX, '')
         .replace(')', '')
@@ -49,7 +53,7 @@ function cleanCode(code) {
 }
 
 // Extract name from named subqueries
-function getQueryName(code) {
+function getQueryName(code: string) {
     const namingPatternMatches = code.match(SQL_QUERY_NAMING_REGEX);
     if (!namingPatternMatches) {
         return null;
@@ -62,7 +66,7 @@ function getQueryName(code) {
 }
 
 // Extract fields from select
-function getFields(code) {
+function getFields(code: string) {
     const fieldSection = code.match(/SELECT\s+(.*?)\s+FROM/gi);
     if (!fieldSection) {
         return [];
