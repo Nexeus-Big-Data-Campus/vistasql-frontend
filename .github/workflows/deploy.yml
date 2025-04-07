@@ -36,4 +36,10 @@ jobs:
 
           echo "📦 Subiendo nueva versión..."
           rsync -avz -e "ssh -p 18765" ./build/deploy-check.html u2745-gx48k1bmxwyj@ssh.vistasql.com:~/public_html/
+      
+      - name: 🚧 Subida archivo test.html
+        run: |
+          echo "<!DOCTYPE html><html><head><title>Prueba</title></head><body><h1>✅ Despliegue funcionando</h1></body></html>" > test.html
+          rsync -avz -e "ssh -p 18765" ./test.html u2745-gx48k1bmxwyj@ssh.vistasql.com:~/public_html/
+    
 
