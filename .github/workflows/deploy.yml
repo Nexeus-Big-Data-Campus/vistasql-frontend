@@ -35,7 +35,8 @@ jobs:
           ssh -p 18765 u2745-gx48k1bmxwyj@ssh.vistasql.com "rm -f public_html/Default.html && rm -rf public_html/* && mkdir -p public_html"
 
           echo "📦 Subiendo nueva versión..."
-          rsync -avz -e "ssh -p 18765" ./build/ u2745-gx48k1bmxwyj@ssh.vistasql.com:/home/u2745-gx48k1bmxwyj/public_html/
+          rsync -avz -e "ssh -p 18765" ./build/ u2745-gx48k1bmxwyj@ssh.vistasql.com:/home/u2745-gx48k1bmxwyj/www/vistasql.com/public_html/
+
 
     
 
