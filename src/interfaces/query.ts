@@ -1,7 +1,7 @@
-export interface QueryNode {
+export interface Query {
     name: string;
     hash: string;
     code: string;
     fields: string[];
-    children: QueryNode[];
+    children: Query[];
 }

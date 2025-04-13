@@ -3,15 +3,15 @@ import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
 import QueryParser from '../../services/QueryParser/QueryParser';
 import "prismjs/components/prism-sql";
-import { QueryNode } from "../../interfaces/query";
+import { Query } from "../../interfaces/query";
 
 interface Props {
-    queryTree: QueryNode;
-    onQueryTreeChanged: (queryTree: QueryNode) => void;
+    queryTree: Query;
+    onQueryTreeChanged: (queryTree: Query) => void;
 }
 
 export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
-    const [code, setCode] = useState('SELECT * FROM users;');
+    const [code, setCode] = useState(`select * from users;`);
 
     const SQL_PATTERNS = [
         { regex: /\b(SELECT|FROM|WHERE|ORDER BY|WITH|AS|LIKE)\b/gi, className: "text-indigo-600" },
@@ -42,7 +42,6 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
     const updateQueryTree = (code: string) => {
         const parsedQuery = QueryParser.parseQuery(code);
-
         if (!parsedQuery) {
             console.error("Error parsing query");
             return;
@@ -54,7 +53,7 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
     return (
         <Editor
-            className="h-full border-1 border-gray-400"
+            className="h-full border-r-1 border-black"
             value={code}
             onValueChange={onCodeChange}
             highlight={highlightQueries}

@@ -24,24 +24,21 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }) {
         return highlightedCode;
     }
 
+
     const onCodeChange = (code) => {
         setCode(code);
         queryTree = QueryParser.parseQuery(code);
         onQueryTreeChanged(queryTree);
-        console.log(queryTree);
     }
 
     return (
         <Editor
-            className="rounded"
+            className="text-sm"
             value={code}
             onValueChange={onCodeChange}
             highlight={highlightQueries}
-            padding={10}
             style={{
                 fontFamily: '"Fira code", "Fira Mono", monospace',
-                fontSize: 14,
-                border: '1px solid',
             }}
         />
     );
