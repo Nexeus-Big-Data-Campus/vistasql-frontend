@@ -1,5 +1,7 @@
+import { LexicalError } from "./error";
 import { Join } from "./join";
 import { Reference } from "./reference";
+
 
 export interface Query {
     name: string;
@@ -10,4 +12,5 @@ export interface Query {
     children: Query[];
     joins: Join[];
     references: Reference[];
+    errors: LexicalError[];
 }

@@ -62,8 +62,10 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
     }
 
     return (
-        <Editor
-            className="h-full inset-shadow-sm inset-shadow-gray-400 overflow-scroll"
+        <div id="editor-container" className="h-full">
+            <Editor
+            id="sql-editor"
+            className="inset-shadow-sm inset-shadow-gray-400 min-h-full"
             value={code}
             onValueChange={onCodeChange}
             highlight={highlightQueries}
@@ -73,5 +75,6 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
                 fontSize: 14,
             }}
         />
+        </div>
     );
 }
