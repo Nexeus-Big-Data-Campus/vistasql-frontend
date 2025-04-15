@@ -6,12 +6,16 @@ import "prismjs/components/prism-sql";
 import { Query } from "../../interfaces/query";
 
 interface Props {
-    queryTree: Query;
-    onQueryTreeChanged: (queryTree: Query) => void;
+    queryTree: Query[];
+    onQueryTreeChanged: (queryTree: Query[]) => void;
 }
 
 export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
     const [code, setCode] = useState(`select * from users;`);
+
+    const [debounceTimer, setDebounceTimer] = useState<number | null>(null);
+
+    const CODE_DEBOUNCE_TIME = 350;
 
     const SQL_PATTERNS = [
         { regex: /\b(SELECT|FROM|WHERE|ORDER BY|WITH|AS|LIKE)\b/gi, className: "text-indigo-600" },
@@ -36,8 +40,14 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
     }
 
     const onCodeChange = (code: string) => {
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+        }
+
         setCode(code);
-        updateQueryTree(code);
+        setDebounceTimer(setTimeout(() => {
+            updateQueryTree(code);
+        }, CODE_DEBOUNCE_TIME))
     }
 
     const updateQueryTree = (code: string) => {
@@ -53,7 +63,7 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
     return (
         <Editor
-            className="h-full border-r-1 border-black"
+            className="h-full inset-shadow-sm inset-shadow-gray-400 overflow-scroll"
             value={code}
             onValueChange={onCodeChange}
             highlight={highlightQueries}

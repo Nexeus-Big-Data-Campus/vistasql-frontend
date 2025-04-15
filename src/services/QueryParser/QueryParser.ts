@@ -1,143 +1,207 @@
 import murmur from "murmurhash-js";
 import { Query } from "../../interfaces/query";
+import {Language, Node, Parser} from "web-tree-sitter";
+import { Join } from "../../interfaces/join";
+import { Reference } from "../../interfaces/reference";
 
-const SQL_SUBQUERY_REGEX = /(\s*[\w]+\s+AS)?\s*\(\s*SELECT[\s\S]+?\)/gi;
-const SQL_QUERY_NAMING_REGEX = /\s*[\w]+\s+AS/gi
-const SQL_QUERY_FIELDS_REGEX = /\s*SELECT\s+([\s\S]+?)\s+FROM/gi;
+let parser: Parser;
 
-// Return a tree with structure:
-// {name: "query", code: "SELECT...", hash: 1234, children: []}
-function parseQuery(code: string): Query | null {
-    if(!code) {
+
+// Initialize the tree-sitter parser
+Parser.init({
+    locateFile(scriptName: string, scriptDirectory: string) {
+        return scriptName;
+      },
+}).then(async () => {
+    console.log('Tree-sitter initialized');
+    parser = new Parser();
+    const SQL = await Language.load('/tree-sitter-sql.wasm');
+    parser.setLanguage(SQL);
+});
+
+
+// Returns a tree with root in the main select statement using tree-sitter
+// and the SQL grammar
+// See: https://github.com/DerekStride/tree-sitter-sql/tree/main/test/corpus for tree examples
+function parseQuery(code: string): Query[] | null {
+    if(!code || !parser) {
         return null;
     }
 
-    const hash = murmur.murmur3(code);
-    const subqueriesMatches = code.match(SQL_SUBQUERY_REGEX);
-
-    if (!subqueriesMatches) {
-        return buildQuery(code, hash, []);
+    const tree = parser.parse(code);
+    
+    if(!tree) {
+        return null;
     }
 
-    const children: Query[] = [];
-    subqueriesMatches.forEach((subQuery, i) => {
-        code = code.replace(subQuery, `{${i}}`);
-        const child = parseQuery(subQuery.replace('(', ''));
-        if (child) {
-            children.push(child); 
+    const nodes: Query[] = [];
+    const rootNode = tree.rootNode;
+
+    const statements = getDirectChildByType(rootNode, 'statement');
+    statements.forEach((statement) => {
+        if(!statement) {
+            return;
         }
+
+        nodes.push(buildQueryNodeFromTree(statement, statement.type));
     });
 
-    // Replace children code for hash
-    children.forEach((child, i) => {
-        code = code.replace(`{${i}}`, ` {${child.name}}`);
-    });
-
-    return buildQuery(code, hash, children);
+    return nodes;
 }
 
-function buildQuery(code: string, hash: string, children: Query[]): Query {
+function buildQueryNodeFromTree(rootNode: Node, type: string): Query {
+    const cte = rootNode.descendantsOfType('cte');
+    const subqueries = findAllSubqueries(rootNode);
+
+    const cteNodes = cte
+        .map((subquery) => processCte(subquery, 'cte'))
+        .filter((cte) => cte !== null);
+    const subqueryNodes = subqueries
+        .map((subquery) => buildQueryNodeFromTree(subquery, 'subquery'));
+
+    const formClause = getNodeTypesInCurrentScope(rootNode, 'from');
+    const references: Reference[] = formClause.length > 0 ? getFromReferences(formClause[0]) : [];
+
     return {
-        hash,
-        code: cleanCode(code),
-        name: getQueryName(code) ?? 'SELECT',
-        fields: getFields(code),
-        children
+        hash: murmur.murmur3(rootNode.text + Math.random() * 1000),
+        code: rootNode.text,
+        name: rootNode.type,
+        type: type,
+        fields: getSelectFields(rootNode),
+        joins: getJoins(rootNode),
+        children: [...cteNodes, ...subqueryNodes],
+        references 
     };
 }
 
-function cleanCode(code: string) {
-    return code
-        .replace(SQL_QUERY_NAMING_REGEX, '')
-        .replace(')', '')
-        .trim();
-}
-
-// Extract name from named subqueries
-function getQueryName(code: string) {
-    const namingPatternMatches = code
-        .replace(SQL_QUERY_FIELDS_REGEX, '')
-        .match(SQL_QUERY_NAMING_REGEX);
-    if (!namingPatternMatches) {
+function processCte(cte: Node | null, type: string): Query | null {
+    if(!cte) {
         return null;
     }
 
-    return namingPatternMatches[0]
-        .replace(/\s*(WITH|,)\n*\s*/gi, '')
-        .replace(/\s+AS/gi, '')
-        .trim();
+    const statement = getDirectChildByType(cte, 'statement');
+    
+    if(!statement || !statement[0]) {
+        return null;
+    }
+
+    return buildQueryNodeFromTree(statement[0], type);
 }
 
-// Extract fields from select
-function getFields(code: string) {
-    const fieldSection = code.match(SQL_QUERY_FIELDS_REGEX);
-    if (!fieldSection) {
+
+function getJoins(node: Node): Join[] {
+    const joins: Join[] = [];
+    const joinClauses = getNodeTypesInCurrentScope(node, 'join');
+
+    joinClauses.forEach((joinClause) => {
+        if(!joinClause) {
+            return;
+        }
+        
+        const relation = joinClause.descendantsOfType('relation');
+        const predicate = joinClause.childForFieldName('predicate')?.text ?? '';
+
+        if(!relation || !relation[0]) {
+            return
+        }
+
+        const source = getNodeTypesInCurrentScope(relation[0], 'object_reference');
+
+        if(!source || !source[0]) {
+            return;
+        }
+
+        const alias = relation[0].childForFieldName('alias')?.text ?? '';
+        const type = joinClause.text.split('JOIN')[0].toLowerCase().trim();
+
+        joins.push({
+            alias,
+            type,
+            predicate,
+            source: source[0].text,
+        });
+    });
+
+    return joins;
+}
+
+function getFromReferences(node: Node): Reference[] {
+    if(node.type !== 'from') {
+        throw new Error('Node is not a from clause');
+    }
+
+    const relations = getDirectChildByType(node, 'relation');
+
+    if(!relations) {
         return [];
     }
 
-    const fieldsContent = fieldSection[0].replace('SELECT', '').replace('FROM', '');
-    return splitFields(fieldsContent).map(getFieldName);
+    const references: Reference[] = [];
+    relations.forEach((relation) => {
+        if(!relation) {
+            return;
+        }
+
+        const alias = relation.childForFieldName('alias')?.text ?? '';
+        const source = getNodeTypesInCurrentScope(relation, 'object_reference');
+        
+        references.push({
+            alias,
+            name: source[0]?.text ?? '',
+        });
+    });
+
+    return references;
 }
 
-function getFieldName(field: string) {
-    const fieldAliasSplit = field.split(/\s+AS\s+/i);
-    if (fieldAliasSplit.length > 1) {
-        const fieldAlias = fieldAliasSplit[fieldAliasSplit.length - 1].trim();
-        return fieldAlias
-            .replaceAll(/['"\[\]]/g, '');
+function getSelectFields(selectClause: Node | null): string[] {
+    if(!selectClause) {
+        return [];
     }
 
-    return field.trim();
+    const fields: string[] = [];
+    const selectExpression = selectClause.descendantsOfType('select_expression')[0];
+    const terms = selectExpression?.namedChildren.filter((child) => child?.type === 'term');
+    
+    terms?.forEach((term) => {
+        const field = term?.text;
+        const alias = term?.childForFieldName('alias')?.text;
+
+        if(!field && !alias) {
+            return;
+        }
+
+        fields.push((alias ?? field) ?? '');
+    }); 
+
+    return fields;
 }
 
+function getDirectChildByType(node: Node, type: string): (Node | null)[] {
+    return node.namedChildren.filter((child) => child?.type === type);
+}
 
-// Split fields by comma, respecting parentheses and quotes
-function splitFields(selectClause: string): string[] {
-    const fieldsRaw: string[] = [];
-    let currentField = '';
-    let parenDepth = 0;
-    let quoteChar: "'" | '"' | null = null;
-
-    for (let i = 0; i < selectClause.length; i++) {
-        const char = selectClause[i];
-
-        if (quoteChar) { // If inside quotes
-            if (char === quoteChar) {
-                quoteChar = null; // End quote
-            }
-            currentField += char;
-            continue;
+// Return all nodes of a given type without entering subqueries
+function getNodeTypesInCurrentScope(node: Node, type: string): Node[] {
+    const hits: Node[] = [];
+    const children = node.namedChildren;
+    const heap = [...children];
+    while(heap.length > 0) {
+        const currentNode = heap.pop();
+        if(currentNode?.type === type) {
+            hits.push(currentNode);
         }
-
-        // Handle starting quotes
-        if (char === "'" || char === '"') {
-            quoteChar = char;
-            currentField += char;
-            continue;
-        }
-
-        // Handle parentheses
-        if (char === '(') {
-            parenDepth++;
-        } else if (char === ')') {
-            parenDepth = Math.max(0, parenDepth - 1); // Prevent negative depth
-        }
-
-        // Split only if comma is encountered outside parentheses and quotes
-        if (char === ',' && parenDepth === 0) {
-            fieldsRaw.push(currentField.trim());
-            currentField = ''; // Reset for the next field
-        } else {
-            currentField += char;
+        
+        if(currentNode?.type !== 'subquery') {
+            heap.push(...currentNode?.namedChildren ?? []);
         }
     }
 
-    // Add the last field after the loop finishes
-    if (currentField.trim()) {
-         fieldsRaw.push(currentField.trim());
-    }
+    return hits;
+}
 
-    return fieldsRaw;
+function findAllSubqueries(node: Node): Node[] {
+    return getNodeTypesInCurrentScope(node, 'subquery');
 }
 
 export default {parseQuery};
