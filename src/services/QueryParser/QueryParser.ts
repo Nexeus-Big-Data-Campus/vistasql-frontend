@@ -3,6 +3,7 @@ import { Query } from "../../interfaces/query";
 import {Language, Node, Parser} from "web-tree-sitter";
 import { Join } from "../../interfaces/join";
 import { Reference } from "../../interfaces/reference";
+import { LexicalError } from "../../interfaces/error";
 
 let parser: Parser;
 
@@ -61,6 +62,7 @@ function buildQueryNodeFromTree(rootNode: Node, type: string): Query {
 
     const formClause = getNodeTypesInCurrentScope(rootNode, 'from');
     const references: Reference[] = formClause.length > 0 ? getFromReferences(formClause[0]) : [];
+    const errors = getQueryErrors(rootNode);
 
     return {
         hash: murmur.murmur3(rootNode.text + Math.random() * 1000),
@@ -70,8 +72,19 @@ function buildQueryNodeFromTree(rootNode: Node, type: string): Query {
         fields: getSelectFields(rootNode),
         joins: getJoins(rootNode),
         children: [...cteNodes, ...subqueryNodes],
-        references 
+        references,
+        errors
     };
+}
+
+function getQueryErrors(rootNode: Node): LexicalError[] {
+    return rootNode
+        .descendantsOfType('ERROR')
+        .filter(error => error !== null)
+        .map(error => ({
+            startIndex: error.startIndex,
+            endIndex: error.endIndex
+        }));
 }
 
 function processCte(cte: Node | null, type: string): Query | null {
@@ -160,7 +173,7 @@ function getSelectFields(selectClause: Node | null): string[] {
     }
 
     const fields: string[] = [];
-    const selectExpression = selectClause.descendantsOfType('select_expression')[0];
+    const selectExpression = getNodeTypesInCurrentScope(selectClause, 'select_expression')[0];
     const terms = selectExpression?.namedChildren.filter((child) => child?.type === 'term');
     
     terms?.forEach((term) => {

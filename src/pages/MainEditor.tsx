@@ -20,14 +20,14 @@ export default function MainEditor() {
     const [queryTree, setQueryTree] = useState<Query[]>(initialQueryTree);
 
     return (
-        <main className="flex flex-col h-full">
+        <main className="flex flex-col h-screen">
             <Header/>
-            <Grid container spacing={0} className="bg-gray-100 h-full">
-                <Grid size={{xs: 12, md: 4}} className="h-1/2 md:h-full">
+            <Grid container spacing={0} className="bg-gray-100 flex-grow overflow-auto">
+                <Grid size={{xs: 12, md: 4}} className="h-1/2 md:h-full !overflow-auto">
                     <SQLEditor queryTree={queryTree} onQueryTreeChanged={setQueryTree}/>
                 </Grid>
-                <Grid size={{xs: 12, md: 8}} className="p-2 h-full">
-                    <QueryDisplay className="w-full" queryTree={queryTree}/>
+                <Grid size={{xs: 12, md: 8}} className="p-2">
+                    <QueryDisplay queryTree={queryTree}/>
                 </Grid>
             </Grid>
         </main>

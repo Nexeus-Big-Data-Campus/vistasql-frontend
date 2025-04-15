@@ -29,6 +29,24 @@ interface Props {
 }
 
 export default function QueryDisplay({ queryTree }: Props) {
+    
+    // TODO: Improve this function to calculate node size based on content
+    const getNodeSize = (node: FlowNode): {width: number, height: number} => {
+        switch(node.type) {
+            case 'query':
+                const query = node.data as Query;
+                const height = (query.fields.length * 15) + 60;
+                return {width: 200, height};
+            case 'join':
+                return {width: 200, height: 50};
+            case 'reference':
+                const reference = node.data as Reference;
+                return {width: reference.name.length * 7.5, height: 50};
+            default:
+                return {width: 200, height: 50};
+        }
+    }
+    
     const buildLayout = (flowNodes: FlowNode[]) : {nodes: FlowNode[], edges: any[]} => {
         const allEdges: any[] = [];
         const g = new dagre.graphlib.Graph();
@@ -39,9 +57,9 @@ export default function QueryDisplay({ queryTree }: Props) {
         });
         g.setDefaultEdgeLabel(() => ({}));
 
-        // TODO: Calculate node height based on content
         flowNodes.forEach((node) => {
-            g.setNode(node.id, { width: 200, height: 50 });  
+            const size = getNodeSize(node);
+            g.setNode(node.id, size);  
 
             if(node.parent) {
                 g.setEdge(node.id, node.parent);
@@ -128,7 +146,7 @@ export default function QueryDisplay({ queryTree }: Props) {
             nodeTypes={nodeTypes}
             fitView
         >
-            <Controls></Controls>
+            <Controls showInteractive={false}></Controls>
             <Background></Background>
         </ReactFlow>
     )
