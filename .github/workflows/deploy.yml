@@ -24,19 +24,22 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
-          # Añadir host a known_hosts
-          ssh-keyscan -p 18765 ssh.vistasql.com >> ~/.ssh/known_hosts
+          # Añadir host sin verificación (opcional si prefieres evitar known_hosts)
+          echo "🔐 Desactivando comprobación estricta de clave"
+          echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
-          # Ver contenido, borrar Default.html y limpiar carpeta public_html
-          echo "🔍 Comprobando contenido en SiteGround antes de borrar..."
-          ssh -p 18765 u2745-gx48k1bmxwyj@ssh.vistasql.com "ls -la public_html"
-
+          # Limpiar public_html
           echo "🧹 Borrando contenido anterior..."
-          ssh -p 18765 u2745-gx48k1bmxwyj@ssh.vistasql.com "rm -f public_html/Default.html && rm -rf public_html/* && mkdir -p public_html"
+          ssh -p 18765 u2745-gx48k1bmxwyj@ssh.vistasql.com "rm -rf ~/www/vistasql.com/public_html/* && mkdir -p ~/www/vistasql.com/public_html"
 
           echo "📦 Subiendo nueva versión..."
           rsync -avz -e "ssh -p 18765" ./build/ u2745-gx48k1bmxwyj@ssh.vistasql.com:/home/u2745-gx48k1bmxwyj/www/vistasql.com/public_html/
 
-
-    
-
+      - name: 🔄 Forzar refresco de caché NGINX (timestamp update)
+        run: |
+          ssh -p 18765 u2745-gx48k1bmxwyj@ssh.vistasql.com << EOF
+            echo "🔁 Forzando modificación de archivos clave..."
+            touch ~/www/vistasql.com/public_html/index.html
+            touch ~/www/vistasql.com/public_html/robots.txt
+            echo "✅ Caché forzada por timestamps actualizados"
+          EOF
