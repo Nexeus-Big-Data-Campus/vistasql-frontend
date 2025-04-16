@@ -50,31 +50,69 @@ function parseQuery(code: string): Query[] {
     return nodes;
 }
 
-function buildQueryNodeFromTree(rootNode: Node, type: string): Query {
-    const cte = rootNode.descendantsOfType('cte');
+function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | null = null): Query {
+    const ctes = rootNode.descendantsOfType('cte');
     const subqueries = findAllSubqueries(rootNode);
+    
+    // Uses recursion to build child nodes
+    const cteNodes = processCte(ctes); 
+    const subqueryNodes = processSubqueries(subqueries);
+    const children = [...cteNodes, ...subqueryNodes]; 
 
-    const cteNodes = cte
-        .map((subquery) => processCte(subquery, 'cte'))
-        .filter((cte) => cte !== null);
-    const subqueryNodes = subqueries
-        .map((subquery) => buildQueryNodeFromTree(subquery, 'subquery'));
-
-    const formClause = getNodeTypesInCurrentScope(rootNode, 'from');
-    const references: Reference[] = formClause.length > 0 ? getFromReferences(formClause[0]) : [];
+    const references = getTableReferences(rootNode);
+    const fields = getSelectFields(rootNode, references, children);
     const errors = getQueryErrors(rootNode);
 
     return {
         hash: murmur.murmur3(rootNode.text + Math.random() * 1000),
         code: rootNode.text,
-        name: rootNode.type,
+        name: name ?? rootNode.type,
         type: type,
-        fields: getSelectFields(rootNode),
+        fields,
         joins: getJoins(rootNode),
-        children: [...cteNodes, ...subqueryNodes],
+        children,
         references,
         errors
     };
+}
+
+function getTableReferences(rootNode: Node): Reference[] {
+    const formClause = getNodeTypesInCurrentScope(rootNode, 'from');
+    return formClause.length > 0 ? getFromReferences(formClause[0]) : [];
+}
+
+function getFromReferences(node: Node): Reference[] {
+    if(node.type !== 'from') {
+        throw new Error('Node is not a from clause');
+    }
+
+    const relations = getDirectChildByType(node, 'relation');
+
+    if(!relations) {
+        return [];
+    }
+
+    const references: Reference[] = [];
+    relations.forEach((relation) => {
+        if(!relation) {
+            return;
+        }
+
+        const isSubquery = getDirectChildByType(relation, 'subquery').length > 0;
+        if(isSubquery) {
+            return;
+        }
+
+        const alias = relation.childForFieldName('alias')?.text ?? '';
+        const source = getNodeTypesInCurrentScope(relation, 'object_reference');
+        
+        references.push({
+            alias,
+            name: source[0]?.text ?? '',
+        });
+    });
+
+    return references;
 }
 
 function getQueryErrors(rootNode: Node): LexicalError[] {
@@ -87,18 +125,32 @@ function getQueryErrors(rootNode: Node): LexicalError[] {
         }));
 }
 
-function processCte(cte: Node | null, type: string): Query | null {
-    if(!cte) {
-        return null;
-    }
+function processSubqueries(subqueries: Node[]): Query[] {
+    return subqueries.map((subquery) => {
+        const type = subquery?.parent?.type === 'relation' ? 'relation' : 'subquery';
+        return buildQueryNodeFromTree(subquery, type)}
+    );
+}
 
-    const statement = getDirectChildByType(cte, 'statement');
+function processCte(ctes: (Node | null)[]): Query[] {
+    const cteNodes: Query[] = [];
+    ctes.forEach(cte => {
+        if(!cte) {
+            return null;
+        }
     
-    if(!statement || !statement[0]) {
-        return null;
-    }
+        const identifierNode = getDirectChildByType(cte, 'identifier');
+        const name = identifierNode ? identifierNode[0]?.text : null;
+        const statement = getDirectChildByType(cte, 'statement');
+        
+        if(!statement || !statement[0]) {
+            return null;
+        }
 
-    return buildQueryNodeFromTree(statement[0], type);
+        cteNodes.push(buildQueryNodeFromTree(statement[0], 'cte', name));
+    })
+
+    return cteNodes;
 }
 
 
@@ -138,54 +190,50 @@ function getJoins(node: Node): Join[] {
     return joins;
 }
 
-function getFromReferences(node: Node): Reference[] {
-    if(node.type !== 'from') {
-        throw new Error('Node is not a from clause');
-    }
-
-    const relations = getDirectChildByType(node, 'relation');
-
-    if(!relations) {
-        return [];
-    }
-
-    const references: Reference[] = [];
-    relations.forEach((relation) => {
-        if(!relation) {
-            return;
-        }
-
-        const alias = relation.childForFieldName('alias')?.text ?? '';
-        const source = getNodeTypesInCurrentScope(relation, 'object_reference');
-        
-        references.push({
-            alias,
-            name: source[0]?.text ?? '',
-        });
-    });
-
-    return references;
-}
-
-function getSelectFields(selectClause: Node | null): string[] {
+function getSelectFields(selectClause: Node | null, references: Reference[], children: Query[]): string[] {
     if(!selectClause) {
         return [];
     }
 
-    const fields: string[] = [];
+    let fields: string[] = [];
     const selectExpression = getNodeTypesInCurrentScope(selectClause, 'select_expression')[0];
     const terms = selectExpression?.namedChildren.filter((child) => child?.type === 'term');
+    let isSelectAll = false;
     
     terms?.forEach((term) => {
         const field = term?.text;
         const alias = term?.childForFieldName('alias')?.text;
+        const value = term?.childForFieldName('value')?.type;
 
         if(!field && !alias) {
             return;
         }
 
+        if(value === 'all_fields') {
+            isSelectAll = true;
+        }
+
         fields.push((alias ?? field) ?? '');
     }); 
+
+    if(isSelectAll) {
+        // Add the fields from the children referenced in the FORM clause
+        references.forEach(reference => {
+            const referenceChild = children.filter(query => query.name === reference.name);
+            referenceChild.forEach(c => {
+                fields = fields.concat(c.fields.filter(f => f !== '*'));
+            })
+        });
+
+        // Add the fields from the subquery inside the FORM clause
+        children.forEach((c: Query) => {
+            if(c.type !== 'relation') {
+                return;
+            }
+
+            fields = fields.concat(c.fields.filter(f => f !== '*'));
+        })
+    }
 
     return fields;
 }
