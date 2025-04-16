@@ -5,16 +5,7 @@ import Header from "../components/Header";
 import Grid from "@mui/material/Grid";
 import { Query } from "../interfaces/query";
 
-const initialQueryTree: Query[] = [{
-    name: 'SELECT',
-    hash: '',
-    children: [],
-    fields: [],
-    code: 'SELECT',
-    joins: [],
-    references: [],
-    type: ""
-}]
+const initialQueryTree: Query[] = [];
 
 export default function MainEditor() {
     const [queryTree, setQueryTree] = useState<Query[]>(initialQueryTree);

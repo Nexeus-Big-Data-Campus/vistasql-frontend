@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
 import QueryParser from '../../services/QueryParser/QueryParser';
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
-    const [code, setCode] = useState(`select * from users;`);
+    const [code, setCode] = useState('');
 
     const [debounceTimer, setDebounceTimer] = useState<number | null>(null);
 
@@ -21,9 +21,20 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
         { regex: /\b(SELECT|FROM|WHERE|ORDER BY|WITH|AS|LIKE)\b/gi, className: "text-indigo-600" },
     ];
 
+    const TEXTAREA_ID = 'sql-editor-textarea';
+
     useEffect(() => {
         updateQueryTree(code);
+        focusTextArea();
     }, []);
+
+    const focusTextArea = () => {
+        const textAreaElement = document.getElementById(TEXTAREA_ID);
+
+        if(textAreaElement) {
+            textAreaElement.focus();
+        }
+    };
 
     const highlightQueries = (code: string) => {
         let highlightedCode = highlight(code, languages.sql, 'sql');
@@ -39,6 +50,7 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
         return highlightedCode;
     }
 
+    // Update query after the user stops typing using a debounce
     const onCodeChange = (code: string) => {
         if (debounceTimer) {
             clearTimeout(debounceTimer);
@@ -52,20 +64,17 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
     const updateQueryTree = (code: string) => {
         const parsedQuery = QueryParser.parseQuery(code);
-        if (!parsedQuery) {
-            console.error("Error parsing query");
-            return;
-        }
-
         queryTree = parsedQuery;
         onQueryTreeChanged(queryTree);
     }
 
     return (
-        <div id="editor-container" className="h-full">
+        <div id="editor-container" className="h-full border-primary">
             <Editor
             id="sql-editor"
+            textareaId={TEXTAREA_ID}
             className="inset-shadow-sm inset-shadow-gray-400 min-h-full"
+            textareaClassName="!focus:border-1 !rounded-0"
             value={code}
             onValueChange={onCodeChange}
             highlight={highlightQueries}

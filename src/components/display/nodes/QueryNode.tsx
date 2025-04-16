@@ -15,7 +15,7 @@ export default function QueryNode({ data }: Props) {
             <Handle type="target" position={Position.Left} id={'target'}/>
             <Handle type="source" position={Position.Right} id={'source'}/>
             <header className='p-2 bg-black flex items-center justify-between'>
-                <span className='text-xl text-white'>SELECT</span>
+                <span className='text-xl text-white'>{name}</span>
                 <Chip label={type} className='ml-6 !bg-gray-200 !text-xs'></Chip>
             </header>
             <section className='text-sm bg-white'>

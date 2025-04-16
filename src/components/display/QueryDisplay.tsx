@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Background, Controls, ReactFlow, XYPosition } from '@xyflow/react';
+import React, { useMemo, useState } from 'react';
+import { Background, Controls, ReactFlow, ReactFlowInstance, XYPosition } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Query } from '../../interfaces/query';
 import QueryNode from './nodes/QueryNode';
@@ -8,6 +8,7 @@ import JoinNode from './nodes/JoinNode';
 import { Join } from '../../interfaces/join';
 import ReferenceNode from './nodes/ReferenceNode';
 import { Reference } from '../../interfaces/reference';
+import { Alert } from '@mui/material';
 
 const nodeTypes = {
     query: QueryNode,
@@ -29,6 +30,8 @@ interface Props {
 }
 
 export default function QueryDisplay({ queryTree }: Props) {
+
+    const [flowInstance, setFLowInstance] = useState<ReactFlowInstance<any, any> | undefined>();
     
     // TODO: Improve this function to calculate node size based on content
     const getNodeSize = (node: FlowNode): {width: number, height: number} => {
@@ -45,6 +48,61 @@ export default function QueryDisplay({ queryTree }: Props) {
             default:
                 return {width: 200, height: 50};
         }
+    }
+
+    const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
+        const treeNodes: FlowNode[] = [];
+
+        // Add root node
+        treeNodes.push( {
+            id: `${node.hash}`,
+            type: 'query',
+            data: node,
+            parent: parentHash,
+            position: { x: 0, y: 0 }
+        });
+        
+        node.children.forEach((child) => {
+            treeNodes.push(...flattenQueryTree(child, `${node.hash}`));
+        });
+
+        node.joins.forEach((join) => {
+            const id = `${node.hash}-${join.alias}-${join.source}`
+            treeNodes.push({
+                id,
+                type: 'join',
+                data: join,
+                parent: `${node.hash}`,
+                position: { x: 0, y: 0 },
+                edgelLabel: join.predicate
+            });
+
+            const reference = {name: join.source, alias: join.alias} as Reference;
+            treeNodes.push({
+                id: `${id}-join-ref--${reference.alias}-${reference.name}`,
+                type: 'reference',
+                data: reference,
+                parent: id,
+                position: { x: 0, y: 0 },
+                edgelLabel: reference.alias
+            });
+        });
+
+        const newReferences = node.references.filter(ref => {
+            return !node.children.reduce((acum, child) => acum || child.name === ref.name, false);
+        });
+        newReferences.forEach((reference) => {
+            treeNodes.push({
+                id: `${node.hash}-ref--${reference.name}-${reference.alias}`,
+                type: 'reference',
+                data: reference,
+                parent: `${node.hash}`,
+                position: { x: 0, y: 0 },
+                edgelLabel: reference.alias
+            });
+        });
+
+        return treeNodes;
     }
     
     const buildLayout = (flowNodes: FlowNode[]) : {nodes: FlowNode[], edges: any[]} => {
@@ -79,65 +137,24 @@ export default function QueryDisplay({ queryTree }: Props) {
                 y: nodeWithPosition.y
             };
         });
-
+        
         return {nodes: flowNodes, edges: allEdges};
     }
     
     const {nodes, edges} = useMemo(() => {
-        const allNodes: FlowNode[] = [];
-        const flattenQueryTree = (node: Query, parentHash?: string): any => {
-            allNodes.push( {
-                id: `${node.hash}`,
-                type: 'query',
-                data: node,
-                parent: parentHash,
-                position: { x: 0, y: 0 }
-            });
-            
-            node.children.forEach((child) => {
-                flattenQueryTree(child, `${node.hash}`);
-            });
-
-            node.joins.forEach((join) => {
-                const id = `${node.hash}-${join.alias}-${join.source}`
-                allNodes.push({
-                    id,
-                    type: 'join',
-                    data: join,
-                    parent: `${node.hash}`,
-                    position: { x: 0, y: 0 },
-                    edgelLabel: join.predicate
-                });
-
-                const reference = {name: join.source, alias: join.alias} as Reference;
-                allNodes.push({
-                    id: `${id}-ref-1`,
-                    type: 'reference',
-                    data: reference,
-                    parent: id,
-                    position: { x: 0, y: 0 },
-                    edgelLabel: reference.alias
-                });
-            });
-
-            node.references.forEach((reference) => {
-                allNodes.push({
-                    id: `${node.hash}-${reference.name}-${reference.alias}`,
-                    type: 'reference',
-                    data: reference,
-                    parent: `${node.hash}`,
-                    position: { x: 0, y: 0 },
-                    edgelLabel: reference.alias
-                });
-            });
+        if (!queryTree) {
+            return {nodes: [], edges: []};
         }
 
-        queryTree.forEach((node) => {
-            flattenQueryTree(node);
-        });
-
+        const allNodes = queryTree.map((node) => flattenQueryTree(node)).flat();
         return buildLayout(allNodes);
     }, [queryTree]);
+
+    const emptyQueryAlert = () => {
+        if(nodes.length === 0) {
+            return <Alert severity='info'>Type your Query in the editor to update the visualization.</Alert>
+        }
+    }
 
     return (
         <ReactFlow
@@ -145,7 +162,11 @@ export default function QueryDisplay({ queryTree }: Props) {
             edges={edges}
             nodeTypes={nodeTypes}
             fitView
+            onInit={(instance) => setFLowInstance(instance)}
+            onNodesChange={() => flowInstance?.fitView()}
         >
+            {emptyQueryAlert()}
+
             <Controls showInteractive={false}></Controls>
             <Background></Background>
         </ReactFlow>
