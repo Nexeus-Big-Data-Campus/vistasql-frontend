@@ -24,15 +24,15 @@ Parser.init({
 // Returns a tree with root in the main select statement using tree-sitter
 // and the SQL grammar
 // See: https://github.com/DerekStride/tree-sitter-sql/tree/main/test/corpus for tree examples
-function parseQuery(code: string): Query[] | null {
+function parseQuery(code: string): Query[] {
     if(!code || !parser) {
-        return null;
+        return [];
     }
 
     const tree = parser.parse(code);
     
     if(!tree) {
-        return null;
+        return [];
     }
 
     const nodes: Query[] = [];
