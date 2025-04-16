@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
-    const [code, setCode] = useState(`select * from users;`);
+    const [code, setCode] = useState('');
 
     const [debounceTimer, setDebounceTimer] = useState<number | null>(null);
 
@@ -39,6 +39,7 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
         return highlightedCode;
     }
 
+    // Update query after the user stops typing using a debounce
     const onCodeChange = (code: string) => {
         if (debounceTimer) {
             clearTimeout(debounceTimer);
@@ -52,11 +53,6 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
     const updateQueryTree = (code: string) => {
         const parsedQuery = QueryParser.parseQuery(code);
-        if (!parsedQuery) {
-            console.error("Error parsing query");
-            return;
-        }
-
         queryTree = parsedQuery;
         onQueryTreeChanged(queryTree);
     }

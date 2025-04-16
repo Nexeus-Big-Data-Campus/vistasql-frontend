@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Background, Controls, ReactFlow, XYPosition } from '@xyflow/react';
+import React, { useMemo, useState } from 'react';
+import { Background, Controls, ReactFlow, ReactFlowInstance, XYPosition } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Query } from '../../interfaces/query';
 import QueryNode from './nodes/QueryNode';
@@ -8,6 +8,7 @@ import JoinNode from './nodes/JoinNode';
 import { Join } from '../../interfaces/join';
 import ReferenceNode from './nodes/ReferenceNode';
 import { Reference } from '../../interfaces/reference';
+import { Alert } from '@mui/material';
 
 const nodeTypes = {
     query: QueryNode,
@@ -29,6 +30,8 @@ interface Props {
 }
 
 export default function QueryDisplay({ queryTree }: Props) {
+
+    const [flowInstance, setFLowInstance] = useState<ReactFlowInstance<any, any> | undefined>();
     
     // TODO: Improve this function to calculate node size based on content
     const getNodeSize = (node: FlowNode): {width: number, height: number} => {
@@ -84,6 +87,10 @@ export default function QueryDisplay({ queryTree }: Props) {
     }
     
     const {nodes, edges} = useMemo(() => {
+        if (!queryTree) {
+            return {nodes: [], edges: []};
+        }
+
         const allNodes: FlowNode[] = [];
         const flattenQueryTree = (node: Query, parentHash?: string): any => {
             allNodes.push( {
@@ -139,13 +146,25 @@ export default function QueryDisplay({ queryTree }: Props) {
         return buildLayout(allNodes);
     }, [queryTree]);
 
+    function emptyQueryAlert() {
+        if(nodes.length === 0) {
+            return (
+                <Alert severity='info'>Type your Query in the editor to update the visualization.</Alert>
+            )
+        }
+    }
+
     return (
         <ReactFlow
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
             fitView
+            onInit={(instance) => setFLowInstance(instance)}
+            onNodesChange={() => flowInstance?.fitView()}
         >
+            {emptyQueryAlert()}
+
             <Controls showInteractive={false}></Controls>
             <Background></Background>
         </ReactFlow>
