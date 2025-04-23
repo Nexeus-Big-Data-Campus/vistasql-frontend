@@ -61,12 +61,21 @@ export default function QueryNode({ data, resetHighlight }: Props) {
     }
 
     return (
+<<<<<<< HEAD
         <div className="rounded-t-xs overflow-hidden border-1 bg-gray-900">
             <Handle type="target" position={Position.Left} id={'target'} />
             <Handle type="source" position={Position.Right} id={'source'} />
             <header className='py-1 px-2 bg-gray-900 flex items-center justify-between'>
                 <span className='text-xl text-white'>{name}</span>
                 <TypeLabel type={type}></TypeLabel>
+=======
+        <div className="rounded-t overflow-hidden border-1">
+            <Handle type="target" position={Position.Left} id={'target'}/>
+            <Handle type="source" position={Position.Right} id={'source'}/>
+            <header className='p-2 bg-black flex items-center justify-between'>
+                <span className='text-xl text-white'>{name}</span>
+                <Chip label={type} className='ml-6 !bg-gray-200 !text-xs'></Chip>
+>>>>>>> main
             </header>
             <section className='text-sm bg-white'>
                 {fields.map((field, index) => (
