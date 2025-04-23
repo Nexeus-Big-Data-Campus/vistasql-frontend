@@ -1,14 +1,16 @@
 import { LexicalError } from "./error";
+import { Field } from "./field";
 import { Join } from "./join";
 import { Reference } from "./reference";
 
 
 export interface Query {
+    id: string;
     name: string;
+    alias?: string;
     type: string;
-    hash: string;
     code: string;
-    fields: string[];
+    fields: Field[];
     children: Query[];
     joins: Join[];
     references: Reference[];
