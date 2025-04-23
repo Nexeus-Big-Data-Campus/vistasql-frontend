@@ -9,7 +9,7 @@ interface Props {
 export default function ReferenceNode({ data }: Props) {
 
     return <>
-        <header className='py-2 px-4 bg-black flex items-center justify-between rounded'>
+        <header className='py-1 px-2 bg-gray-900 flex items-center justify-between rounded-xs'>
             <span className='text-xl text-white'>{data.name}</span>
         </header>
         <Handle type="source" position={Position.Right} id={'source'}/>

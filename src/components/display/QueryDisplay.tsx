@@ -1,34 +1,34 @@
+<<<<<<< HEAD
+import React, { useEffect, useMemo, useState } from 'react';
+import { Background, Controls, ReactFlow, ReactFlowInstance, ReactFlowProvider, useEdgesState, useNodesState } from '@xyflow/react';
+=======
 import React, { useMemo, useState } from 'react';
 import { Background, Controls, ReactFlow, ReactFlowInstance, XYPosition } from '@xyflow/react';
+>>>>>>> 7d7f63c (Add indicator to empty queries)
 import '@xyflow/react/dist/style.css';
 import { Query } from '../../interfaces/query';
 import QueryNode from './nodes/QueryNode';
-import dagre from '@dagrejs/dagre';
 import JoinNode from './nodes/JoinNode';
-import { Join } from '../../interfaces/join';
 import ReferenceNode from './nodes/ReferenceNode';
+<<<<<<< HEAD
+import { Alert } from '@mui/material';
+import { FlowNode, useQueryFlow } from '../../hooks/useQueryFlow';
+=======
 import { Reference } from '../../interfaces/reference';
 import { Alert } from '@mui/material';
+>>>>>>> 7d7f63c (Add indicator to empty queries)
 
-const nodeTypes = {
-    query: QueryNode,
-    join: JoinNode,
-    reference: ReferenceNode
-}
-
-interface FlowNode {
-    id: string;
-    type: 'query' | 'join' | 'reference';
-    data: Query | Join | Reference;
-    position: XYPosition;
-    parent?: string;
-    edgelLabel?: string;
-}
+export const FIELD_HIGHLIGHT_CLASS = 'highlight-field';
+export const EDGE_HIGHLIGHT_CLASS = 'highlight-edge';
 
 interface Props {
     queryTree: Query[]
 }
 
+<<<<<<< HEAD
+function EmptyQueryAlert({queryLength} : {queryLength: number}) {
+    if (queryLength > 0) return;
+=======
 export default function QueryDisplay({ queryTree }: Props) {
 
     const [flowInstance, setFLowInstance] = useState<ReactFlowInstance<any, any> | undefined>();
@@ -48,61 +48,6 @@ export default function QueryDisplay({ queryTree }: Props) {
             default:
                 return {width: 200, height: 50};
         }
-    }
-
-    const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
-        const treeNodes: FlowNode[] = [];
-
-        // Add root node
-        treeNodes.push( {
-            id: `${node.hash}`,
-            type: 'query',
-            data: node,
-            parent: parentHash,
-            position: { x: 0, y: 0 }
-        });
-        
-        node.children.forEach((child) => {
-            treeNodes.push(...flattenQueryTree(child, `${node.hash}`));
-        });
-
-        node.joins.forEach((join) => {
-            const id = `${node.hash}-${join.alias}-${join.source}`
-            treeNodes.push({
-                id,
-                type: 'join',
-                data: join,
-                parent: `${node.hash}`,
-                position: { x: 0, y: 0 },
-                edgelLabel: join.predicate
-            });
-
-            const reference = {name: join.source, alias: join.alias} as Reference;
-            treeNodes.push({
-                id: `${id}-join-ref--${reference.alias}-${reference.name}`,
-                type: 'reference',
-                data: reference,
-                parent: id,
-                position: { x: 0, y: 0 },
-                edgelLabel: reference.alias
-            });
-        });
-
-        const newReferences = node.references.filter(ref => {
-            return !node.children.reduce((acum, child) => acum || child.name === ref.name, false);
-        });
-        newReferences.forEach((reference) => {
-            treeNodes.push({
-                id: `${node.hash}-ref--${reference.name}-${reference.alias}`,
-                type: 'reference',
-                data: reference,
-                parent: `${node.hash}`,
-                position: { x: 0, y: 0 },
-                edgelLabel: reference.alias
-            });
-        });
-
-        return treeNodes;
     }
     
     const buildLayout = (flowNodes: FlowNode[]) : {nodes: FlowNode[], edges: any[]} => {
@@ -137,7 +82,7 @@ export default function QueryDisplay({ queryTree }: Props) {
                 y: nodeWithPosition.y
             };
         });
-        
+
         return {nodes: flowNodes, edges: allEdges};
     }
     
@@ -146,29 +91,145 @@ export default function QueryDisplay({ queryTree }: Props) {
             return {nodes: [], edges: []};
         }
 
-        const allNodes = queryTree.map((node) => flattenQueryTree(node)).flat();
+        const allNodes: FlowNode[] = [];
+        const flattenQueryTree = (node: Query, parentHash?: string): any => {
+            allNodes.push( {
+                id: `${node.hash}`,
+                type: 'query',
+                data: node,
+                parent: parentHash,
+                position: { x: 0, y: 0 }
+            });
+            
+            node.children.forEach((child) => {
+                flattenQueryTree(child, `${node.hash}`);
+            });
+
+            node.joins.forEach((join) => {
+                const id = `${node.hash}-${join.alias}-${join.source}`
+                allNodes.push({
+                    id,
+                    type: 'join',
+                    data: join,
+                    parent: `${node.hash}`,
+                    position: { x: 0, y: 0 },
+                    edgelLabel: join.predicate
+                });
+
+                const reference = {name: join.source, alias: join.alias} as Reference;
+                allNodes.push({
+                    id: `${id}-ref-1`,
+                    type: 'reference',
+                    data: reference,
+                    parent: id,
+                    position: { x: 0, y: 0 },
+                    edgelLabel: reference.alias
+                });
+            });
+
+            node.references.forEach((reference) => {
+                allNodes.push({
+                    id: `${node.hash}-${reference.name}-${reference.alias}`,
+                    type: 'reference',
+                    data: reference,
+                    parent: `${node.hash}`,
+                    position: { x: 0, y: 0 },
+                    edgelLabel: reference.alias
+                });
+            });
+        }
+
+        queryTree.forEach((node) => {
+            flattenQueryTree(node);
+        });
+
         return buildLayout(allNodes);
     }, [queryTree]);
+>>>>>>> 7d7f63c (Add indicator to empty queries)
 
-    const emptyQueryAlert = () => {
+    function emptyQueryAlert() {
         if(nodes.length === 0) {
-            return <Alert severity='info'>Type your Query in the editor to update the visualization.</Alert>
+            return (
+                <Alert severity='info'>Type your Query in the editor to update the visualization.</Alert>
+            )
         }
     }
 
     return (
-        <ReactFlow
+        <Alert severity='info'>Type your Query in the editor to update the visualization.</Alert>
+    );
+}
+
+export default function QueryDisplay({ queryTree }: Props) {
+
+    const [flowInstance, setFLowInstance] = useState<ReactFlowInstance<any, any> | undefined>();
+    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const [nodes, setNodes] = useNodesState([]);
+    const { nodes: memoizedNodes, edges: memoizedEdges } = useQueryFlow(queryTree);
+    const nodeTypes = useMemo(() => ({
+        query: (props: any) => <QueryNode {...props} resetHighlight={resetHighlight}></QueryNode>,
+        join: JoinNode,
+        reference: ReferenceNode
+    }), []);
+
+    useEffect(() => {
+        setNodes(memoizedNodes as any);
+        setEdges(memoizedEdges as any);
+    }, [memoizedNodes, memoizedEdges]);
+
+
+    const onNodesChange = () => {
+        // flowInstance?.fitView();
+    }
+
+    const onCanvasClick = () => {
+        resetEdges();
+        resetHighlight();
+    }
+
+    const resetEdges = () => {
+        const newEdges = edges.map((e: FlowNode) => ({
+            ...e,
+            animated: false,
+            style: {},
+            className: '',
+        }));
+
+        setEdges(newEdges as any);
+    }
+
+    const resetHighlight = () => {
+        const highlightedFields = document.getElementsByClassName(FIELD_HIGHLIGHT_CLASS);
+
+        Array.from(highlightedFields).forEach((element: Element) => {
+            element.classList.remove(FIELD_HIGHLIGHT_CLASS);
+        });
+    };
+
+    return (
+        <ReactFlowProvider>
+            <ReactFlow
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
             fitView
+<<<<<<< HEAD
+            onInit={(instance) => setFLowInstance(instance as any)}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onClick={onCanvasClick}
+        >
+            <EmptyQueryAlert queryLength={queryTree.length}/>
+=======
             onInit={(instance) => setFLowInstance(instance)}
             onNodesChange={() => flowInstance?.fitView()}
         >
             {emptyQueryAlert()}
 
+>>>>>>> 7d7f63c (Add indicator to empty queries)
             <Controls showInteractive={false}></Controls>
             <Background></Background>
         </ReactFlow>
+        </ReactFlowProvider>
     )
 }
