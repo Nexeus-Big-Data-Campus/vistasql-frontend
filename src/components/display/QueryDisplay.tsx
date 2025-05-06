@@ -42,7 +42,7 @@ export default function QueryDisplay({ queryTree }: Props) {
 
 
     const onNodesChange = () => {
-        // flowInstance?.fitView();
+        flowInstance?.fitView();
     }
 
     const onCanvasClick = () => {

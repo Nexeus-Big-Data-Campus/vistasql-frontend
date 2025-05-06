@@ -6,3 +6,7 @@ export interface Field {
     origin: string[];
     isAllSelector: boolean;
 }
+
+export interface InvocationField extends Field {
+    invocationName: string;
+}

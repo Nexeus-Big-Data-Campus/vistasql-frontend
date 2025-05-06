@@ -4,7 +4,7 @@ import {Language, Node, Parser} from "web-tree-sitter";
 import { Join } from "../../interfaces/join";
 import { Reference } from "../../interfaces/reference";
 import { LexicalError } from "../../interfaces/error";
-import { Field } from "../../interfaces/field";
+import { Field, InvocationField } from "../../interfaces/field";
 
 let parser: Parser;
 
@@ -212,7 +212,7 @@ function getSelectFields(selectClause: Node | null, references: Reference[], joi
     }
 
     const selectExpression = getNodeTypesInCurrentScope(selectClause, 'select_expression')[0];
-    const terms = selectExpression?.namedChildren.filter((child) => child?.type === 'term');
+    const terms = selectExpression?.namedChildren.filter((child: Node) => child?.type === 'term');
     let fields: Field[] = terms.filter((t: Node | null) => !!t).map((t: Node) => processField(t, references, joins, children));
     const hasAllSelector = fields.reduce((acum, field) => acum || field.isAllSelector, false);
 
@@ -243,9 +243,16 @@ function processField(term: Node, references: Reference[], joins: Join[], queryC
     const text = field ?? '';
     const alias = term?.childForFieldName('alias')?.text;
     const value = term?.childForFieldName('value')?.type;
+    const isInvocation = value === 'invocation';
+
+    if (isInvocation) {
+        return processInvocationField(term, references, joins, queryChildren, alias);
+    }
+
     const isSelectAll = value === 'all_fields';
     const [originAlias, fieldName] = text.split('.');
-    const name = text.includes('.') && (value !== 'invocation' && value !== 'subquery') ? fieldName : text;
+    const name = text.includes('.') && !isInvocation ? fieldName : text;
+   
     let origin: string[] = [];
     let id: string | undefined = undefined;
 
@@ -293,6 +300,30 @@ function processField(term: Node, references: Reference[], joins: Join[], queryC
         alias: alias ?? text,
         isAllSelector: isSelectAll,
         origin,
+    };
+}
+
+
+function processInvocationField(term: Node, references: Reference[], joins: Join[], queryChildren: Query[], alias: string): InvocationField {
+    console.log('Processing invocation field', term.toString());
+    const invocation = getDirectChildByType(term, 'invocation')[0];
+    const invocationName = getDirectChildByType(invocation, 'object_reference')[0].text;
+    const invocationTerm = getNodeTypesInCurrentScope(invocation, 'field');
+
+    const fields = invocationTerm.map((t: Node) => {
+        t.namedChildren.forEach((child: Node) => {
+            console.log('Child', child.text);
+        });
+    });
+
+    return {
+        id: murmur.murmur3(term.text + Math.random() * 1000),
+        name: term.text,
+        text: term.text,
+        alias,
+        isAllSelector: false,
+        invocationName,
+        origin: [],
     };
 }
 
