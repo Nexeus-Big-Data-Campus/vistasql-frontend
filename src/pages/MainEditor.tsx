@@ -4,11 +4,17 @@ import QueryDisplay from "../components/display/QueryDisplay";
 import Header from "../components/Header";
 import Grid from "@mui/material/Grid";
 import { Query } from "../interfaces/query";
+import LoginForm from "../components/LoginForm";
 
 const initialQueryTree: Query[] = [];
 
 export default function MainEditor() {
     const [queryTree, setQueryTree] = useState<Query[]>(initialQueryTree);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+    if (!isLoggedIn) {
+        return <LoginForm onLoginSuccess={() => setIsLoggedIn(true)} />;
+    }
 
     return (
         <main className="flex flex-col h-screen">
