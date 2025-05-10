@@ -31,6 +31,8 @@ function parseQuery(code: string): Query[] {
     }
 
     const tree = parser.parse(code);
+
+    console.log('Tree:', tree.rootNode.toString());
     
     if(!tree) {
         return [];
