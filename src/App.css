@@ -2,6 +2,10 @@
     --primary: #1976d2;
 }
 
+.bg-primary {
+    background-color: var(--primary) !important;
+}
+
 .highlight-field {
     font-weight: 600;
     background-color: var(--primary);
@@ -11,4 +15,17 @@
 .highlight-edge path {
     stroke: var(--primary) !important;
     stroke-width: 3px !important;
+}
+
+.react-flow__node {
+    overflow: visible;
+}
+
+
+.highlight-field .invocation-column-text {
+    display: flex !important;
+}
+
+.invocation-column-text {
+    display: none;
 }

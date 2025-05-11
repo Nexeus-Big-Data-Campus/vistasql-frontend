@@ -29,6 +29,7 @@ export default function QueryDisplay({ queryTree }: Props) {
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [nodes, setNodes] = useNodesState([]);
     const { nodes: memoizedNodes, edges: memoizedEdges } = useQueryFlow(queryTree);
+
     const nodeTypes = useMemo(() => ({
         query: (props: any) => <QueryNode {...props} resetHighlight={resetHighlight}></QueryNode>,
         join: JoinNode,
@@ -39,7 +40,6 @@ export default function QueryDisplay({ queryTree }: Props) {
         setNodes(memoizedNodes as any);
         setEdges(memoizedEdges as any);
     }, [memoizedNodes, memoizedEdges]);
-
 
     const onNodesChange = () => {
         flowInstance?.fitView();
