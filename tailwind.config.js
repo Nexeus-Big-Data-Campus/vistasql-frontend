@@ -1,21 +1,18 @@
-import { palette } from './src/theme/palette';
+import colors from 'tailwindcss/colors';
 
 module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
-    extend: {
-      colors: {
-        // Map MUI palette colors to Tailwind color names
-        primary: palette.primary,     
-        secondary: palette.secondary, 
-        error: palette.error.main,   
-        warning: palette.warning.main,
-        info: palette.info.main,
-        success: palette.success.main,
-      },
+    colors: {
+      ...colors,
+      primary: palette.primary,     
+      secondary: palette.secondary, 
+      error: palette.error.main,   
+      warning: palette.warning.main,
+      info: palette.info.main,
+      success: palette.success.main,
     },
   },
-  plugins: [],
 }
