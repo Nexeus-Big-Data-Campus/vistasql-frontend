@@ -23,10 +23,30 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
     const TEXTAREA_ID = 'sql-editor-textarea';
 
+    const STORAGE_KEY = 'sqlEditorQuery'; 
+
     useEffect(() => {
-        updateQueryTree(code);
+
+        const saved = localStorage.getItem(STORAGE_KEY);
+
+        if (saved) {
+            setCode(saved);
+            updateQueryTree(saved);
+        }
+
+        else {
+            updateQueryTree('');
+        }
+
         focusTextArea();
+
     }, []);
+
+    useEffect(() => {
+
+        localStorage.setItem(STORAGE_KEY, code);
+
+    }, [code]);
 
     const focusTextArea = () => {
         const textAreaElement = document.getElementById(TEXTAREA_ID);
