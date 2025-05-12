@@ -23,15 +23,15 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
     const TEXTAREA_ID = 'sql-editor-textarea';
 
-    const STORAGE_KEY = 'sqlEditorQuery'; 
+    const QUERY_STORAGE_KEY = 'sqlEditorQuery'; 
 
     useEffect(() => {
 
-        const saved = localStorage.getItem(STORAGE_KEY);
+        const storedQuery = localStorage.getItem(QUERY_STORAGE_KEY);
 
-        if (saved) {
-            setCode(saved);
-            updateQueryTree(saved);
+        if (storedQuery) {
+            setCode(storedQuery);
+            updateQueryTree(storedQuery);
         }
 
         else {
@@ -41,12 +41,6 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
         focusTextArea();
 
     }, []);
-
-    useEffect(() => {
-
-        localStorage.setItem(STORAGE_KEY, code);
-
-    }, [code]);
 
     const focusTextArea = () => {
         const textAreaElement = document.getElementById(TEXTAREA_ID);
@@ -78,7 +72,10 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
         setCode(code);
         setDebounceTimer(setTimeout(() => {
+
             updateQueryTree(code);
+            localStorage.setItem(QUERY_STORAGE_KEY, code);
+
         }, CODE_DEBOUNCE_TIME))
     }
 
