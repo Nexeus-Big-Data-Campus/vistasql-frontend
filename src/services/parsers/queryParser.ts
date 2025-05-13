@@ -223,8 +223,6 @@ function getSelectFields(selectClause: Node | null, references: Reference[], joi
                                 .map((t: Node) => processColumn(t, references, joins, children))
                                 .filter((f: Field | null) => !!f) as Field[];
 
-    console.log('Fields:', fields);
-
     const hasAllSelector = fields.reduce((acum, field) => acum || field.isAllSelector, false);
 
     if (hasAllSelector) {
@@ -238,7 +236,7 @@ function getSelectFields(selectClause: Node | null, references: Reference[], joi
 
         // Add the fields from the subquery inside the FROM clause
         children.forEach((c: Query) => {
-            if (c.type !== 'relation') {
+            if (c.type !== 'relation' && c.type !== 'cte') {
                 return;
             }
 
@@ -254,14 +252,15 @@ function concatChildrenFields(node: Query, fields: Field[]): Field[] {
         node.fields
             .filter((f) => !f.isAllSelector)
             .map((f) => {
-                const reference: FieldReference = {
-                    resolvedFieldIds: [f.id],
-                    nodeIds: [node.id],
+                const references: FieldReference | null = !f.references ? null : {
+                    fieldId: f.id,
+                    parentId: f.references?.parentId,
+                    parentNodeId: node.id,
                 };
 
                 return {
                     ...f,
-                   reference, // Accumulate origin
+                   references, // Accumulate origin
                 };
             })
     );

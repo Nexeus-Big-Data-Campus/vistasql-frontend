@@ -4,6 +4,7 @@ import { XYPosition } from '@xyflow/react';
 import { Query } from '../interfaces/query';
 import { Join } from '../interfaces/join';
 import { Reference } from '../interfaces/reference';
+import { Field } from '../interfaces/field';
 
 //TODO: MOVE TO INTERFACE FILE
 export interface FlowNode {
@@ -132,27 +133,28 @@ export const useQueryFlow = (queryTree: Query[]) => {
         return nodes.reduce((acc: any[], node) => {
             const data = node.data as any;
             const fields = data.fields ?? [];
-            if (fields) {
-                fields.forEach((field: any) => {
-                    const fieldId = field.id;
-                    const fieldReferences = field.references?.resolvedFieldIds ?? [];
-                    const fieldNodeIds = field.references?.nodeIds ?? [];
-                    fieldReferences.forEach((ref: string, i: number) => {
-                        const edge = {
-                            id: `${ref}-${fieldId}`,
-                            source: `${fieldNodeIds[i]}`,
-                            target: node.id,
-                            sourceHandle: `${ref}-source`,
-                            targetHandle: `${fieldId}-target`,
-                        };
 
-                        console.log('edge', edge);
-                        acc.push(edge);
-                    });
+            fields.forEach((field: Field) => {
+                const fieldId = field.id;
+                const fieldReference = field.references?.fieldId;
+                const fieldNodeId = field.references?.parentNodeId;
+
+                if (!fieldReference || !fieldNodeId) {
+                    return;
+                }
+
+                const edgeId = `${fieldReference}-${fieldId}` + (field.references?.parentId ?? ''); 
+
+                acc.push({
+                    id: edgeId,
+                    source: `${fieldNodeId}`,
+                    target: node.id,
+                    sourceHandle: `${fieldReference}-source`,
+                    targetHandle: `${fieldId}-target`,
                 });
-            }
+            });
 
-                return acc;
+            return acc;
         }, []);
     }
 

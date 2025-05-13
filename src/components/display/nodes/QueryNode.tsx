@@ -53,7 +53,7 @@ export default function QueryNode({ data, resetHighlight }: Props) {
     const highlightEdges = (field: Field) => {
         setEdges((prevEdges) => {
             const updated = prevEdges.map((e) => {
-                const isFieldEdge = e.id.includes(field.id) || e.source.includes(field.id) || e.target.includes(field.id);
+                const isFieldEdge = e.id.includes(field.id) || (field.references?.parentId && e.id.endsWith(field.references?.parentId));
 
                 if (!isFieldEdge) {
                     return {

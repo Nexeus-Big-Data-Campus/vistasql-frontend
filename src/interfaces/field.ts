@@ -3,7 +3,7 @@ export interface Field {
     text: string;
     name: string;
     alias: string;
-    references?: FieldReference;
+    references: FieldReference | null;
     isAllSelector: boolean;
     isAmbiguous: boolean;
 }
@@ -14,6 +14,7 @@ export interface InvocationField extends Field {
 }
 
 export interface FieldReference {
-  resolvedFieldIds: string[];
-  nodeIds: string[];
+  fieldId: string;
+  parentId: string | null;
+  parentNodeId: string | null;
 }

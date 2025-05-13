@@ -30,6 +30,7 @@ function processAllFieldsSelector(): Field {
         alias: '*',
         isAllSelector: true,
         isAmbiguous: false,
+        references: null,
     };
 }   
 
@@ -39,7 +40,7 @@ function processInvocationField(term: Node, references: Reference[], joins: Join
     const parameters = getDirectChildByType(invocation, 'term');
     const fieldParameters = parameters.filter(p => p.childForFieldName('value')?.type === 'field');
     const fields = fieldParameters.map((p) => processField(p, references, joins, queryChildren, alias));
-    const fieldReferences = fields.reduce((acum, field) => {
+    /* const fieldReferences = fields.reduce((acum, field) => {
         const refs = field?.references?.resolvedFieldIds ?? [];
         return {
             resolvedFieldIds: [...acum.resolvedFieldIds, ...refs],
@@ -48,7 +49,7 @@ function processInvocationField(term: Node, references: Reference[], joins: Join
     }, {
         resolvedFieldIds: [] as string[],
         nodeIds: [] as string[],
-    });
+    }); */
 
     return {
         id: murmur.murmur3(term.text + Math.random() * 1000),
@@ -57,9 +58,9 @@ function processInvocationField(term: Node, references: Reference[], joins: Join
         alias: alias ?? term.text,
         isAllSelector: false,
         invocationName,
-        references: fieldReferences,
+        references: null,
         parameters: parameters.map((p) => p.text),
-        isAmbiguous: fieldReferences.nodeIds?.length > 1,
+        isAmbiguous: false,
     };
 }
 
@@ -74,20 +75,22 @@ function processField(term: Node, references: Reference[], joins: Join[], queryC
         alias: alias ?? term.text,
         isAllSelector: false,
         references: fieldReferences,
-        isAmbiguous: fieldReferences.nodeIds?.length > 1,
+        isAmbiguous: false,
     }
 }
 
-function findReferencesForField(term: Node, references: Reference[], joins: Join[], queryChildren: Query[], alias: string | undefined): FieldReference {
-    let referenceIds: string[] = [];
-    let nodeIds: string[] = [];
+function findReferencesForField(term: Node, references: Reference[], joins: Join[], queryChildren: Query[], alias: string | undefined): FieldReference | null {
+    let parentId: string | null = null;
+    let parentNodeId: string | null = null;
+    let fieldId: string | null = null;
     const [referenceAlias, fieldName] = term.text.split('.');
 
     // If there are no joins and no subqueries and one reference, we can return the reference directly
     if (joins.length === 0 && queryChildren.length === 0 && references.length === 1) {
         return {
-            resolvedFieldIds: [references[0].id],
-            nodeIds: [references[0].id],
+            fieldId: references[0].id,
+            parentId: null,
+            parentNodeId: references[0].id,
         }
     }
 
@@ -98,42 +101,46 @@ function findReferencesForField(term: Node, references: Reference[], joins: Join
         referencedTable.forEach(table => {
             table.fields.forEach(f => {
                 if(f.name === fieldName || f.alias === fieldName) {
-                    referenceIds.push(f.id);
-                    nodeIds.push(table.id);
+                    fieldId = f.id;
+                    parentId = f.references?.parentId ?? f.id;
+                    parentNodeId = table.id;
+                    return;
                 }
             });
         });
 
         references.forEach(ref => {
             if(ref.alias === referenceAlias || ref.name === referenceAlias) {
-                referenceIds.push(ref.id);
-                nodeIds.push(ref.id);
+                fieldId = ref.id;
+                parentNodeId = ref.id;
+                return;
             }
         });
 
         joins.forEach(join => {
             if(join.alias === referenceAlias || join.source === referenceAlias) {
-                referenceIds.push(join.id);
-                nodeIds.push(join.id);
+                fieldId = join.id;
+                parentNodeId = join.id;
+                return;
             }
         });
     } else {
         // Search for fields without table alias
         queryChildren.forEach((table) => {
             table.fields.forEach((f) => {
-                console.log('Field:', f, alias);
                 if (f.alias === alias) {
-                    referenceIds.push(f.id);
-                    nodeIds.push(table.id);
+                    fieldId = f.id;
+                    parentId = f.references?.parentId ?? f.id;
+                    parentNodeId = table.id;
+                    return;
                 }
             });
         });
     }
 
-    console.log('Field references:', referenceIds, nodeIds);
-
-    return {
-        resolvedFieldIds: referenceIds,
-        nodeIds: nodeIds,
+    return !fieldId ? null : {
+        fieldId,
+        parentId,
+        parentNodeId
     };
 }
