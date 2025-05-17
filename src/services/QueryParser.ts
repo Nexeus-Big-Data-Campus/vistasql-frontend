@@ -1,13 +1,12 @@
 import murmur from "murmurhash-js";
-import { Query } from "../../interfaces/query";
+import { Query } from "../interfaces/query";
 import {Language, Node, Parser} from "web-tree-sitter";
-import { Join } from "../../interfaces/join";
-import { Reference } from "../../interfaces/reference";
-import { LexicalError } from "../../interfaces/error";
-import { Field } from "../../interfaces/field";
+import { Join } from "../interfaces/join";
+import { Reference } from "../interfaces/reference";
+import { LexicalError } from "../interfaces/error";
+import { Field } from "../interfaces/field";
 
 let parser: Parser;
-
 
 // Initialize the tree-sitter parser
 Parser.init({
