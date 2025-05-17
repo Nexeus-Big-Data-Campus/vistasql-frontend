@@ -1,5 +1,4 @@
 import murmur from "murmurhash-js";
-import { Query } from "../../interfaces/query";
 import {Language, Node, Parser} from "web-tree-sitter";
 import { Join } from "../../interfaces/join";
 import { Reference } from "../../interfaces/reference";
@@ -7,6 +6,8 @@ import { LexicalError } from "../../interfaces/error";
 import { Field, FieldReference, InvocationField } from "../../interfaces/field";
 import { getDirectChildByType, getNodeTypesInCurrentScope, findAllSubqueries } from "./utils";
 import { processColumn } from "./fieldParser";
+import { Query } from "../../interfaces/query";
+
 
 let parser: Parser;
 
@@ -26,7 +27,7 @@ Parser.init({
 // Returns a tree with root in the main select statement using tree-sitter
 // and the SQL grammar
 // See: https://github.com/DerekStride/tree-sitter-sql/tree/main/test/corpus for tree examples
-function parseQuery(code: string): Query[] {
+export default function parseQuery(code: string): Query[] {
     if(!code || !parser) {
         return [];
     }
@@ -266,6 +267,4 @@ function concatChildrenFields(node: Query, fields: Field[]): Field[] {
             })
     );
 }
-
-export default { parseQuery };
 

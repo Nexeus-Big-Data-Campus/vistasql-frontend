@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
-import QueryParser from '../../services/parsers/queryParser';
 import "prismjs/components/prism-sql";
 import { Query } from "../../interfaces/query";
+import parseQuery  from "../../services/parsers/queryParser";
 
 interface Props {
     queryTree: Query[];
@@ -23,10 +23,23 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
     const TEXTAREA_ID = 'sql-editor-textarea';
 
+    const QUERY_STORAGE_KEY = 'sqlEditorQuery'; 
+
     useEffect(() => {
-        updateQueryTree(code);
         focusTextArea();
+        setCode(localStorage.getItem(QUERY_STORAGE_KEY) ?? '');
     }, []);
+
+    useEffect(() => {
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+        }
+
+        setDebounceTimer(setTimeout(() => {
+            updateQueryTree(code);
+            localStorage.setItem(QUERY_STORAGE_KEY, code);
+        }, CODE_DEBOUNCE_TIME))
+    }, [code])
 
     const focusTextArea = () => {
         const textAreaElement = document.getElementById(TEXTAREA_ID);
@@ -50,20 +63,8 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
         return highlightedCode;
     }
 
-    // Update query after the user stops typing using a debounce
-    const onCodeChange = (code: string) => {
-        if (debounceTimer) {
-            clearTimeout(debounceTimer);
-        }
-
-        setCode(code);
-        setDebounceTimer(setTimeout(() => {
-            updateQueryTree(code);
-        }, CODE_DEBOUNCE_TIME))
-    }
-
     const updateQueryTree = (code: string) => {
-        const parsedQuery = QueryParser.parseQuery(code);
+        const parsedQuery = parseQuery(code);
         queryTree = parsedQuery;
         onQueryTreeChanged(queryTree);
     }
@@ -76,7 +77,7 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
             className="inset-shadow-sm inset-shadow-gray-400 min-h-full"
             textareaClassName="!focus:border-1 !rounded-0"
             value={code}
-            onValueChange={onCodeChange}
+            onValueChange={setCode}
             highlight={highlightQueries}
             padding={10}
             style={{
