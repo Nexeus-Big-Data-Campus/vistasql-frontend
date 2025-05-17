@@ -1,17 +1,18 @@
-import { useNavigate } from "react-router";
-import LoginForm from "../components/LoginForm";
+import { useNavigate } from "react-router-dom";
+import RegisterForm from "../components/RegisterForm";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
 
-  const handleLoginSuccess = () => {
+  const handleRegisterSuccess = () => {
+    // aca se redigira una vez registrado a profile 
     navigate("/editor"); 
   };
 
   return (
-<Container component="main" maxWidth="xs">
+    <Container component="main" maxWidth="sm"> 
       <Box
         sx={{
           marginTop: 8,
@@ -20,11 +21,8 @@ export default function LoginPage() {
           alignItems: "center",
         }}
       >
-        
-        <LoginForm onLoginSuccess={handleLoginSuccess} />
+        <RegisterForm onRegisterSuccess={handleRegisterSuccess} />
       </Box>
     </Container>
   );
 }
-      
-

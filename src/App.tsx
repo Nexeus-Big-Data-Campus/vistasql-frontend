@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import MainEditor from './pages/MainEditor';
 import LoginPage from './pages/LoginPage'; 
 import '@fontsource/roboto';
+import RegisterPage from './pages/RegisterPage';
 
 
 const router = createBrowserRouter([
@@ -19,6 +20,15 @@ const router = createBrowserRouter([
     path: '/login',
     element: <LoginPage/>
   },
+  {
+    path: '/signin',
+    element: <RegisterPage/>
+  },
+/* aca apunta al otra pagina 
+ { 
+    path: '/profile',
+    element: <ProfilePage/>
+  },*/
 ]);
 
 function App() {
