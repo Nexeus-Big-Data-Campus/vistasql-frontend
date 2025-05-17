@@ -10,6 +10,7 @@ import { FlowNode, useQueryFlow } from '../../hooks/useQueryFlow';
 
 export const FIELD_HIGHLIGHT_CLASS = 'highlight-field';
 export const EDGE_HIGHLIGHT_CLASS = 'highlight-edge';
+export const EDGE_AMBIGUOUS_CLASS = 'highlight-ambiguous-edge';
 
 interface Props {
     queryTree: Query[]

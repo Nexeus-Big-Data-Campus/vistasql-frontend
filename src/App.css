@@ -1,5 +1,6 @@
 :root {
     --primary: #1976d2;
+    --warning: #d2c019;
 }
 
 .bg-primary {
@@ -14,6 +15,11 @@
 
 .highlight-edge path {
     stroke: var(--primary) !important;
+    stroke-width: 3px !important;
+}
+
+.highlight-ambiguous-edge path  {
+    stroke: var(--warning) !important;
     stroke-width: 3px !important;
 }
 
