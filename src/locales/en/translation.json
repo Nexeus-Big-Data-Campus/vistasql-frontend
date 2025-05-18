@@ -1,0 +1,28 @@
+{
+  "loginPage": {
+    "title": "Login"
+  },
+  "homePage": {
+    "goToEditor": "Go to Editor"
+  },
+  "header": {
+    "appName": "VistaSQL",
+    "login":"LogIn",
+    "signUp":"signUp"
+  },
+  "editorPage": {
+    "title": "SQL Editor"
+  },
+  "form": {
+    "emailLabel": "Email Address",
+    "passwordLabel": "Password"
+  },
+  "loginForm": {
+    "title": "Login",
+    "backButton": "Back",
+    "submitButton": "Login",
+    "successMessage": "Login successful.",
+    "errorMessage": "Login error.",
+    "connectionErrorMessage": "Connection error or incorrect credentials."
+  }
+}

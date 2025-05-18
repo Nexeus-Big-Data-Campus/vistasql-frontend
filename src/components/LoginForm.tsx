@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { ApiService } from "../services/ApiService";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   onLoginSuccess: () => void;
@@ -21,6 +22,7 @@ export default function LoginForm({ onLoginSuccess }: Props) {
     const [isLoading, setIsLoading] = useState(false); // Renombrado de loading a isLoading
     const apiService = new ApiService();
     const navigate = useNavigate(); 
+    const { t } = useTranslation();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,14 +36,14 @@ export default function LoginForm({ onLoginSuccess }: Props) {
 
             if (response.ok) {
                 // Asumiendo que data.message existe en una respuesta exitosa
-                setMessage(data.message || "Inicio de sesión exitoso.");
+                setMessage(data.message || t('loginForm.successMessage'));
                 onLoginSuccess(); 
             } else {
                 // Asumiendo que data.detail existe en una respuesta de error
-                setMessage(data.detail || "Error en el inicio de sesión.");
+                setMessage(data.detail || t('loginForm.errorMessage'));
             }
         } catch (error) {
-            setMessage("Error de conexión o credenciales incorrectas.");
+            setMessage(t('loginForm.connectionErrorMessage'));
             console.error("Login error:", error);
         } finally {
             setIsLoading(false);
@@ -75,7 +77,7 @@ export default function LoginForm({ onLoginSuccess }: Props) {
                     color="inherit"
                     onClick={handleGoBack}
                 >
-                    Atras
+                    {t('loginForm.backButton')}
                 </Button>
             </Box>
 
@@ -97,10 +99,10 @@ export default function LoginForm({ onLoginSuccess }: Props) {
                 }}
             >
                 <Typography variant="h5" component="h1" gutterBottom>
-                    Iniciar sesión
+                    {t('loginForm.title')}
                 </Typography>
                 <TextField
-                    label="Correo electrónico"
+                    label={t('form.emailLabel')}
                     type="email"
                     variant="outlined"
                     value={email}
@@ -109,7 +111,7 @@ export default function LoginForm({ onLoginSuccess }: Props) {
                     fullWidth
                 />
                 <TextField
-                    label="Contraseña"
+                    label={t('form.passwordLabel')}
                     type="password"
                     variant="outlined"
                     value={password}
@@ -120,7 +122,7 @@ export default function LoginForm({ onLoginSuccess }: Props) {
                 
                 <Box sx={{ width: '100%', mt: 1 }}>
                     <Button type="submit" variant="contained" color="primary" fullWidth disabled={isLoading}>
-                        {isLoading ? <CircularProgress size={24} color="inherit" /> : "Entrar"}
+                        {isLoading ? <CircularProgress size={24} color="inherit" /> : t('loginForm.submitButton')}
                     </Button>
                 </Box>
                 {message && (

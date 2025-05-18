@@ -1,0 +1,29 @@
+{
+  
+  "loginPage": {
+    "title": "Iniciar Sesión"
+  },
+  "homePage": {
+    "goToEditor": "Ir al Editor"
+  },
+  "header": {
+    "appName": "VistaSQL",
+    "login": "Iniciar Sesión",
+    "signUp": "Registrarse"    
+  },
+  "editorPage": {
+    "title": "Editor SQL"
+  },
+  "form": {
+    "emailLabel": "Dirección de Email",
+    "passwordLabel": "Contraseña"
+  },
+  "loginForm": {
+    "title": "Iniciar Sesión",
+    "backButton": "Atrás",
+    "submitButton": "Entrar",
+    "successMessage": "Inicio de sesión exitoso.",
+    "errorMessage": "Error en el inicio de sesión.",
+    "connectionErrorMessage": "Error de conexión o credenciales incorrectas."
+  }
+}
