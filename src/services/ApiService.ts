@@ -8,7 +8,7 @@ export class ApiService {
   }
 
   async signin(name: string, email: string, password: string) {
-    return await this.makeRequest("/signin", "POST", { email, password });
+    return await this.makeRequest("/signin", "POST", { name,  email, password });
   }
   
   private async makeRequest(endpoint: string, method: string, body?: any) {

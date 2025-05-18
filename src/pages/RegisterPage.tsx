@@ -1,14 +1,15 @@
 import { useNavigate } from "react-router-dom";
-import LoginForm from "../components/LoginForm";
+import RegisterForm from "../components/RegisterForm";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
 import Header from "../components/Header";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
 
-  const handleLoginSuccess = () => {
-    navigate("/editor"); // Redirige al editor tras iniciar sesión
+  const handleRegisterSuccess = () => {
+    // aca se redigira una vez registrado a profile 
+    navigate("/editor"); 
   };
 
   return (
@@ -34,7 +35,7 @@ export default function LoginPage() {
             alignItems: "center",
           }}
         >
-          <LoginForm onLoginSuccess={handleLoginSuccess} />
+          <RegisterForm onRegisterSuccess={handleRegisterSuccess} />
         </Box>
       </Container>
     </Box>
