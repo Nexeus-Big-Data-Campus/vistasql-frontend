@@ -1,3 +1,4 @@
+import { ApiService } from "../services/ApiService";
 import React, { useState } from "react";
 
 type MessageType = "bug" | "feedback";
@@ -15,18 +16,17 @@ const FeedbackForm: React.FC<Props> = ({ open, onClose }) => {
     e.preventDefault();
 
     const feedback = {
-      user_id: "1", // 🔁 cambiar al user logeado
+      user_id: "440e69b8-307c-4421-883d-1ff79c27c953", // 🔁 cambiar al user logeado
       message_type: messageType,
       message,
     };
 
-    try {
-      const response = await fetch("http://localhost:8000/feedbacks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(feedback),
-      });
+    console.log("feedback que se envía:", feedback);
 
+    try {
+      const api = new ApiService();
+      const response = await api.sendFeedback(feedback);
+      
       if (!response.ok) throw new Error("Error al enviar feedback");
       alert("Enviado con éxito");
       onClose();
@@ -35,6 +35,7 @@ const FeedbackForm: React.FC<Props> = ({ open, onClose }) => {
       console.error(error);
     }
   };
+
 
   if (!open) return null;
 

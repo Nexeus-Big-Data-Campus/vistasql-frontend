@@ -9,8 +9,15 @@ export class ApiService {
 
   async signin(name: string, email: string, password: string) {
     return await this.makeRequest("/signin", "POST", { email, password });
+
   }
-  
+
+  async sendFeedback(feedback: any) {
+    console.log("Enviando feedback:", feedback);
+    return await this.makeRequest("/feedback", "POST", feedback);
+  }
+
+
   private async makeRequest(endpoint: string, method: string, body?: any) {
     const response = await fetch(`${this.API_URL}${endpoint}`, {
       method,
