@@ -8,7 +8,6 @@ import '@fontsource/roboto';
 
 const router = createBrowserRouter([
   {
-<<<<<<< HEAD
     path: '/',
     element: <AppLayout />, // Aquí envolvemos con UserProvider
     children: [
@@ -16,18 +15,6 @@ const router = createBrowserRouter([
       { path: 'editor', element: <MainEditor /> },
       { path: 'login', element: <LoginPage /> },
     ],
-=======
-    path: '/', 
-    element: <Home />,
-  },
-  {
-    path: '/editor',
-    element: <MainEditor />,
-  },
-  {
-    path: '/login',
-    element: <LoginPage/>
->>>>>>> origin/develop
   },
 ]);
 
