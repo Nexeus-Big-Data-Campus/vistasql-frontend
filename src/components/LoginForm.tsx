@@ -6,10 +6,13 @@ import {
     Typography,
     Alert,
     CircularProgress,
+    Paper,
 } from "@mui/material";
 import { ApiService } from "../services/ApiService";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ErrorIcon from "@mui/icons-material/Error";
 
 interface Props {
   onLoginSuccess: () => void;
@@ -19,94 +22,80 @@ export default function LoginForm({ onLoginSuccess }: Props) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [message, setMessage] = useState("");
-    const [isLoading, setIsLoading] = useState(false); // Renombrado de loading a isLoading
+    const [isLoading, setIsLoading] = useState(false);
     const apiService = new ApiService();
     const navigate = useNavigate(); 
     const { t } = useTranslation();
+    const [loginStatus, setLoginStatus] = useState<"success" | "error" | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setMessage(""); 
-        //prueba con la api
+        setLoginStatus(null);
+
         try {
             const response = await apiService.login(email, password);
             const data = await response.json();
-            console.log(data, response);
 
             if (response.ok) {
-                // Asumiendo que data.message existe en una respuesta exitosa
                 setMessage(data.message || t('loginForm.successMessage'));
+                setLoginStatus("success");
                 onLoginSuccess(); 
             } else {
-                // Asumiendo que data.detail existe en una respuesta de error
                 setMessage(data.detail || t('loginForm.errorMessage'));
+                setLoginStatus("error");
             }
-        } catch (error) {
+        } catch (error: any) {
             setMessage(t('loginForm.connectionErrorMessage'));
+            setLoginStatus("error");
             console.error("Login error:", error);
         } finally {
             setIsLoading(false);
         }
     };
-
-    const handleGoBack = () => {
-        navigate("/editor"); 
+    
+    const handleGoRegister = () => {
+        navigate("/register");
     };
 
     return (
-        <Box 
+        <Paper
+            elevation={6}
             sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center', 
-                width: '100%',     
+                p: { xs: 2, sm: 4 }, 
+                borderRadius: 3, 
+                maxWidth: 400, 
+                width: "100%", 
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                boxShadow: "0 8px 32px rgba(25, 118, 210, 0.15)", 
             }}
         >
-            <Box 
-                sx={{
-                    width: '100%',
-                    maxWidth: '400px', 
-                    display: 'flex',
-                    justifyContent: 'flex-start',
-                    mb: 2, 
-                }}
-            >
-                <Button
-                    variant="outlined"
-                    color="inherit"
-                    onClick={handleGoBack}
-                >
-                    {t('loginForm.backButton')}
-                </Button>
-            </Box>
-
-            <Box 
+            <Typography variant="h4" component="h1" gutterBottom color="primary">
+                {t('loginForm.title')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                {t('loginForm.subtitle')}
+            </Typography>
+            <Box
                 component="form"
                 onSubmit={handleSubmit}
                 sx={{
+                    width: "100%", 
                     display: "flex",
                     flexDirection: "column",
-                    alignItems: "center", 
                     gap: 2, 
-                    padding: { xs: 2, sm: 3 },
-                    border: (theme) => `1px solid ${theme.palette.divider}`,
-                    borderRadius: "8px",
-                    boxShadow: (theme) => theme.shadows[3],
-                    maxWidth: "400px", 
-                    width: "100%", 
-                    
                 }}
             >
-                <Typography variant="h5" component="h1" gutterBottom>
-                    {t('loginForm.title')}
-                </Typography>
                 <TextField
                     label={t('form.emailLabel')}
                     type="email"
                     variant="outlined"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
                     required
                     fullWidth
                 />
@@ -116,24 +105,46 @@ export default function LoginForm({ onLoginSuccess }: Props) {
                     variant="outlined"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
                     required
                     fullWidth
                 />
-                
-                <Box sx={{ width: '100%', mt: 1 }}>
-                    <Button type="submit" variant="contained" color="primary" fullWidth disabled={isLoading}>
-                        {isLoading ? <CircularProgress size={24} color="inherit" /> : t('loginForm.submitButton')}
-                    </Button>
-                </Box>
-                {message && (
-                    <Alert
-                        severity={message.toLowerCase().includes("exitoso") || message.toLowerCase().includes("successful") ? "success" : "error"}
-                        sx={{ width: "100%", mt: 2 }}
-                    >
-                        {message}
-                    </Alert>
-                )}
+                <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    size="large"
+                    disabled={isLoading}
+                    sx={{ mt: 1, fontWeight: "bold", letterSpacing: 1 }}
+                >
+                    {isLoading ? <CircularProgress size={24} color="inherit" /> : t('loginForm.submitButton')}
+                </Button>
             </Box>
-        </Box>
+            {message && loginStatus && (
+                <Alert
+                    severity={loginStatus}
+                    sx={{ width: "100%", mt: 2, display: "flex", alignItems: "center" }}
+                    icon={
+                        loginStatus === "success" ? (
+                            <CheckCircleIcon fontSize="inherit" />
+                        ) : (
+                            <ErrorIcon fontSize="inherit" />
+                        )
+                    }
+                >
+                    {message}
+                </Alert>
+            )}
+            <Button
+                variant="text"
+                color="secondary"
+                onClick={handleGoRegister}
+                sx={{ mt: 2, textTransform: "none" }}
+                fullWidth
+            >
+               {t('loginForm.createAccountButton')}
+            </Button>
+        </Paper>
     );
 }

@@ -18,12 +18,26 @@
     "emailLabel": "Dirección de Email",
     "passwordLabel": "Contraseña"
   },
+  "registerForm": {
+    "title": "Crear cuenta",
+    "subtitle": "Regístrate para acceder a la plataforma",
+    "nameLabel": "Nombre de usuario",
+    "submitButton": "Registrarse",
+    "successMessage": "Registro exitoso. Ahora puedes iniciar sesión.",
+    "errorMessage": "Error en el registro. Inténtalo de nuevo.",
+    "connectionErrorMessage": "Error de conexión o credenciales incorrectas.",
+    "alreadyHaveAccountButton": "¿Ya tienes cuenta? Inicia sesión",
+    "successKeyword": "exitoso"
+  },
   "loginForm": {
     "title": "Iniciar Sesión",
+    "subtitle": "Ingresa tus credenciales para iniciar sesión",
     "backButton": "Atrás",
     "submitButton": "Entrar",
     "successMessage": "Inicio de sesión exitoso.",
     "errorMessage": "Error en el inicio de sesión.",
-    "connectionErrorMessage": "Error de conexión o credenciales incorrectas."
+    "connectionErrorMessage": "Error de conexión o credenciales incorrectas.",
+    "createAccountButton": "Crear cuenta"
   }
+  
 }

@@ -1,31 +1,36 @@
 import { useNavigate } from "react-router-dom";
 import RegisterForm from "../components/RegisterForm";
+import Header from "../components/Header";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import { useTranslation } from "react-i18next";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+
   const handleRegisterSuccess = () => {
-    // aca se redigira una vez registrado el profile
-    navigate("/editor"); 
+    
+    navigate("/editor");
   };
+  
+  const isLoggedIn = false;
 
   return (
-    <Container component="main" maxWidth="sm"> 
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Header isLoggedIn={isLoggedIn} />
       <Box
         sx={{
-          marginTop: 8,
+          flexGrow: 1,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
+          justifyContent: "center",
+          py: { xs: 3, sm: 6 } 
         }}
       >
-        
-        <RegisterForm onRegisterSuccess={handleRegisterSuccess} />
+        <Container component="main" maxWidth="sm">
+          <RegisterForm onRegisterSuccess={handleRegisterSuccess} />
+        </Container>
       </Box>
-    </Container>
+    </Box>
   );
 }

@@ -17,12 +17,26 @@
     "emailLabel": "Email Address",
     "passwordLabel": "Password"
   },
+  "registerForm": {
+    "title": "Create Account",
+    "subtitle": "Sign up to access the platform",
+    "nameLabel": "Username",
+    "submitButton": "Sign Up",
+    "successMessage": "Registration successful. You can now log in.",
+    "errorMessage": "Registration error. Please try again.",
+    "connectionErrorMessage": "Connection error or incorrect credentials.",
+    "alreadyHaveAccountButton": "Already have an account? Log in",
+    "successKeyword": "successful"
+  },
   "loginForm": {
     "title": "Login",
+    "subtitle":"Sign up to access the platform",
     "backButton": "Back",
     "submitButton": "Login",
     "successMessage": "Login successful.",
     "errorMessage": "Login error.",
-    "connectionErrorMessage": "Connection error or incorrect credentials."
+    "connectionErrorMessage": "Connection error or incorrect credentials.",
+    "createAccountButton": "Create Account"
   }
+  
 }
