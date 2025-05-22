@@ -23,9 +23,7 @@ export default function RegisterPage() {
           alignItems: "center",
         }}
       >
-        <Typography component="h1" variant="h5" sx={{ mb: 2 }}>
-          
-        </Typography>
+        
         <RegisterForm onRegisterSuccess={handleRegisterSuccess} />
       </Box>
     </Container>
