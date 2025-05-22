@@ -8,7 +8,10 @@ import {
   Paper,
   CircularProgress,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom"; // Añade este import
+import { useNavigate } from "react-router-dom";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ErrorIcon from "@mui/icons-material/Error";
+// ...código existente...
 
 interface Props {
   onLoginSuccess: () => void;
@@ -18,26 +21,31 @@ export default function LoginForm({ onLoginSuccess }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [loginStatus, setLoginStatus] = useState<"success" | "error" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const apiService = new ApiService();
-  const navigate = useNavigate(); // Hook para navegación
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setMessage("");
+    setLoginStatus(null);
     try {
       const response = await apiService.login(email, password);
       const data = await response.json();
 
       if (response.ok) {
-        setMessage(`✅ ${data.message}`);
+        setMessage(data.message);
+        setLoginStatus("success");
         onLoginSuccess();
       } else {
-        setMessage(`❌ ${data.detail}`);
+        setMessage(data.detail);
+        setLoginStatus("error");
       }
     } catch (error) {
-      setMessage("❌ Error de conexión");
+      setMessage("Error de conexión");
+      setLoginStatus("error");
     } finally {
       setIsLoading(false);
     }
@@ -111,12 +119,19 @@ export default function LoginForm({ onLoginSuccess }: Props) {
           )}
         </Button>
       </form>
-      {message && (
+      {message && loginStatus && (
         <Alert
-          severity={message.startsWith("✅") ? "success" : "error"}
-          sx={{ width: "100%", mt: 2 }}
+          severity={loginStatus}
+          sx={{ width: "100%", mt: 2, display: "flex", alignItems: "center" }}
+          icon={
+            loginStatus === "success" ? (
+              <CheckCircleIcon fontSize="inherit" />
+            ) : (
+              <ErrorIcon fontSize="inherit" />
+            )
+          }
         >
-          {message.replace(/^✅ |^❌ /, "")}
+          {message}
         </Alert>
       )}
       <Button
