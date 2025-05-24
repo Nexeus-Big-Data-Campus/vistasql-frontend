@@ -8,66 +8,59 @@ import {
     CircularProgress,
     Paper,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import { ApiService } from "../services/ApiService";
 import { useTranslation } from "react-i18next";
 
 interface Props {
   onRegisterSuccess: () => void;
+  navigateTo: (path: string) => void;
 }
 
-export default function RegisterForm({ onRegisterSuccess }: Props) {
+export default function RegisterForm({ onRegisterSuccess, navigateTo }: Props) {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [message, setMessage] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const apiService = new ApiService();
-    const navigate = useNavigate();
     const { t } = useTranslation();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setMessage("");
-        try {
-            // Se asume que apiService.signin es para el registro.
-            // Si el backend espera 'nombre' y 'apellido' por separado, se debería ajustar aquí y en ApiService.
+        try {            
             const response = await apiService.signin(name, email, password);
             const data = await response.json();
             if (response.ok) {
-                setMessage(data.message || t('registerForm.successMessage'));
-                onRegisterSuccess();
+                setMessage(data.message || t('registerForm.successMessage'));                
             } else {
                 setMessage(data.detail || t('registerForm.errorMessage'));
             }
-        } catch (error: any) { // Especificar 'any' o un tipo más específico para error
+        } catch (error: any) { 
             setMessage(error?.detail || t('registerForm.connectionErrorMessage'));
             console.error("Register error:", error);
         } finally {
             setIsLoading(false);
         }
     };
-
-    // Navega a la página de login
+    
     const handleGoBack = () => {
-        navigate("/login");
+        navigateTo("/login"); 
     };
 
     return (
-        // El componente Paper actúa como el contenedor principal del formulario.
-        // La página contenedora (RegisterPage.tsx) se encarga del centrado en la pantalla.
         <Paper
             elevation={6}
             sx={{
-                p: { xs: 2, sm: 4 }, // Padding responsivo
-                borderRadius: 3, // Bordes redondeados
-                maxWidth: 400, // Ancho máximo consistente con LoginForm
-                width: "100%", // Ocupa el ancho del Container en RegisterPage
+                p: { xs: 2, sm: 4 }, 
+                borderRadius: 3, 
+                maxWidth: 400, 
+                width: "100%", 
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                boxShadow: "0 8px 32px rgba(25, 118, 210, 0.15)", // Sombra suave
+                boxShadow: "0 8px 32px rgba(25, 118, 210, 0.15)", 
             }}
         >
             <Typography variant="h4" component="h1" gutterBottom color="primary">
@@ -80,10 +73,10 @@ export default function RegisterForm({ onRegisterSuccess }: Props) {
                 component="form"
                 onSubmit={handleSubmit}
                 sx={{
-                    width: "100%", // El formulario interno ocupa todo el Paper
+                    width: "100%", 
                     display: "flex",
                     flexDirection: "column",
-                    gap: 2, // Espacio entre campos
+                    gap: 2, 
                 }}
             >
                 <TextField

@@ -1,22 +1,16 @@
-import { useNavigate } from "react-router-dom";
 import RegisterForm from "../components/RegisterForm";
-import Header from "../components/Header";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
 
-export default function RegisterPage() {
-  const navigate = useNavigate();
-
-  const handleRegisterSuccess = () => {
-    
-    navigate("/editor");
-  };
-  
-  const isLoggedIn = false;
+interface RegisterPageProps {
+  onRegisterSuccess: () => void; 
+  navigateTo: (path: string) => void;
+}
+ export default function RegisterPage({ onRegisterSuccess, navigateTo }: RegisterPageProps) {  
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Header isLoggedIn={isLoggedIn} />
+     
       <Box
         sx={{
           flexGrow: 1,
@@ -28,7 +22,8 @@ export default function RegisterPage() {
         }}
       >
         <Container component="main" maxWidth="sm">
-          <RegisterForm onRegisterSuccess={handleRegisterSuccess} />
+          {}
+          <RegisterForm onRegisterSuccess={onRegisterSuccess} navigateTo={navigateTo} />
         </Container>
       </Box>
     </Box>

@@ -1,14 +1,15 @@
-import { Link } from "react-router";
-import Header from "../components/Header";
+import { Button } from "@mui/material";
 
-export default function Home() {
+interface HomeProps {
+    navigateTo: (path: string) => void;    
+}
+export default function Home({ navigateTo }: HomeProps) {
     return (
         <>
-            <Header/>
-            <section className="flex flex-col items-center justify-center h-1/4">
-                <Link to="/editor" className="bg-blue-500 rounded text-white px-4 py-2">
-                    Ir a Editor
-                </Link>
+            <section className="flex flex-col items-center justify-center h-screen">         
+               <Button variant="contained" color="primary" onClick={() => navigateTo('/editor')}>
+                    ir a /editor                
+                </Button>
             </section>
         </>
     );

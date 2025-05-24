@@ -3,15 +3,15 @@ import { AccountCircle, Translate as TranslateIcon, Brightness4 as Brightness4Ic
 import { Button, Typography, IconButton, Menu, MenuItem } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAppTheme } from "../theme/ThemeContext";
 
 interface HeaderProps {    
-    isLoggedIn?: boolean; 
+    isLoggedIn?: boolean;
+    navigateTo: (path: string) => void; 
 }
 
-export default function Header({ isLoggedIn }: HeaderProps) {
+export default function Header({ isLoggedIn, navigateTo }: HeaderProps) {
     const { t, i18n } = useTranslation();
     const [anchorElLang, setAnchorElLang] = useState<null | HTMLElement>(null);
     const { mode, toggleTheme } = useAppTheme();
@@ -34,13 +34,19 @@ export default function Header({ isLoggedIn }: HeaderProps) {
     return (
         <AppBar component="nav" position="relative">
             <Toolbar>
-                
-                <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>{t('header.appName')}</Typography>
+                {/* Hacer clickeable el nombre de la app para ir a Home */}
+                <Typography 
+                    variant="h6" 
+                    component="div" 
+                    sx={{ flexGrow: 1, cursor: 'pointer' }} 
+                    onClick={() => navigateTo('/')}
+                >
+                    {t('header.appName')}
+                </Typography>                
                 {isLoggedIn ? (                    
                     <IconButton
-                        color="inherit"
-                        component={Link}
-                        to="/profile"
+                        color="inherit"                        
+                        onClick={() => navigateTo('/profile')}
                         aria-label="account of current user"
                         aria-controls="menu-appbar"
                         aria-haspopup="true"
@@ -49,8 +55,8 @@ export default function Header({ isLoggedIn }: HeaderProps) {
                     </IconButton>
                 ) : (                    
                     <>
-                        <Button color="inherit" component={Link} to="/login">{t('header.login')}</Button>
-                        <Button color="inherit" component={Link} to="/register">{t('header.signUp')}</Button>
+                        <Button color="inherit" onClick={() => navigateTo('/login')}>{t('header.login')}</Button>
+                        <Button color="inherit" onClick={() => navigateTo('/register')}>{t('header.signUp')}</Button>
                     </>
                 )}
                 <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">

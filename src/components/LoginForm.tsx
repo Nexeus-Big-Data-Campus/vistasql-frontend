@@ -9,22 +9,21 @@ import {
     Paper,
 } from "@mui/material";
 import { ApiService } from "../services/ApiService";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 
 interface Props {
   onLoginSuccess: () => void;
+  navigateTo: (path: string) => void;
 }
 
-export default function LoginForm({ onLoginSuccess }: Props) {
+export default function LoginForm({ onLoginSuccess, navigateTo }: Props) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [message, setMessage] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const apiService = new ApiService();
-    const navigate = useNavigate(); 
     const { t } = useTranslation();
     const [loginStatus, setLoginStatus] = useState<"success" | "error" | null>(null);
 
@@ -55,8 +54,8 @@ export default function LoginForm({ onLoginSuccess }: Props) {
         }
     };
     
-    const handleGoRegister = () => {
-        navigate("/register");
+    const handleGoRegister = () => {        
+        navigateTo("/register");
     };
 
     return (
