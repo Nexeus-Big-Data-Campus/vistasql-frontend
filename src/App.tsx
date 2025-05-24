@@ -3,8 +3,9 @@ import { createBrowserRouter, RouterProvider } from 'react-router';
 import Home from './pages/Home'
 import MainEditor from './pages/MainEditor';
 import LoginPage from './pages/LoginPage'; 
-import '@fontsource/roboto';
-
+import RegisterPage from './pages/RegisterPage';
+import '@fontsource/roboto'; 
+import { AppThemeProvider } from './theme/ThemeContext';
 
 const router = createBrowserRouter([
   {
@@ -19,10 +20,19 @@ const router = createBrowserRouter([
     path: '/login',
     element: <LoginPage/>
   },
+  {
+    path: '/register',
+    element: <RegisterPage />
+  }
+  
 ]);
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <AppThemeProvider>
+      <RouterProvider router={router} />
+    </AppThemeProvider>
+  );
 }
 
 export default App;

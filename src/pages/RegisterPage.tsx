@@ -1,16 +1,17 @@
 import { useNavigate } from "react-router-dom";
-import LoginForm from "../components/LoginForm";
+import RegisterForm from "../components/RegisterForm";
+import Header from "../components/Header";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
-import Header from "../components/Header";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
 
-  const handleLoginSuccess = () => {
+  const handleRegisterSuccess = () => {
+    
     navigate("/editor");
   };
-
+  
   const isLoggedIn = false;
 
   return (
@@ -22,12 +23,12 @@ export default function LoginPage() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center", 
+          justifyContent: "center",
           py: { xs: 3, sm: 6 } 
         }}
       >
-        <Container component="main" maxWidth="sm"> {}
-          <LoginForm onLoginSuccess={handleLoginSuccess} />
+        <Container component="main" maxWidth="sm">
+          <RegisterForm onRegisterSuccess={handleRegisterSuccess} />
         </Container>
       </Box>
     </Box>
