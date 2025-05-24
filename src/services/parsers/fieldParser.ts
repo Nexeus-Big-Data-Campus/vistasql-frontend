@@ -50,7 +50,7 @@ function processInvocationField(term: Node, references: TableReference[], joins:
         invocationName,
         references: fieldReferences,
         parameters: parameters.map((p) => p.text),
-        isAmbiguous: fieldReferences.length > 1,
+        isAmbiguous: false,
     };
 }
 
