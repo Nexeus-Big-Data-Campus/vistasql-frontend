@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
-import QueryParser from '../../services/parsers/queryParser';
 import "prismjs/components/prism-sql";
 import { Query } from "../../interfaces/query";
+import parseQuery  from "../../services/parsers/queryParser";
 
 interface Props {
     queryTree: Query[];
@@ -18,7 +18,7 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
     const CODE_DEBOUNCE_TIME = 350;
 
     const SQL_PATTERNS = [
-        { regex: /\b(SELECT|FROM|WHERE|ORDER BY|WITH|AS|LIKE)\b/gi, className: "text-indigo-600" },
+        { regex: /\b(SELECT|FROM|WHERE|ORDER BY|WITH|AS|LIKE|LEFT|RIGHT|OUTTER|INNER|JOIN)\b/gi, className: "text-indigo-600" },
     ];
 
     const TEXTAREA_ID = 'sql-editor-textarea';
@@ -64,7 +64,8 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
     }
 
     const updateQueryTree = (code: string) => {
-        const parsedQuery = QueryParser.parseQuery(code);
+        const parsedQuery = parseQuery(code);
+        console.log('Parsed Query ', parsedQuery)
         queryTree = parsedQuery;
         onQueryTreeChanged(queryTree);
     }

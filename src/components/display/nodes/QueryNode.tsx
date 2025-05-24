@@ -2,7 +2,7 @@ import { Handle, Position, useReactFlow } from '@xyflow/react';
 import React, { useState } from 'react';
 import { Query } from '../../../interfaces/query';
 import { Field } from '../../../interfaces/field';
-import { EDGE_HIGHLIGHT_CLASS, FIELD_HIGHLIGHT_CLASS } from '../QueryDisplay';
+import { EDGE_AMBIGUOUS_CLASS, EDGE_HIGHLIGHT_CLASS, FIELD_HIGHLIGHT_CLASS } from '../QueryDisplay';
 
 function TypeLabel({ type }: { type: string }) {
     if (type === 'statement') return;
@@ -18,7 +18,7 @@ function InvocationFieldLabel({ field }: { field: Field }) {
     const invocationName = (field as any).invocationName.toUpperCase();
 
     return (
-        <span className='text-[0.6rem] p-1 bg-primary text-white rounded-2xl !font-normal'>{invocationName}</span>
+        <span className='text-[0.6rem] px-2 py-[0.1rem] bg-primary text-white rounded-2xl !font-normal ml-4 leading-normal'>{invocationName}</span>
     );
 }
 
@@ -34,7 +34,7 @@ interface Props {
 }
 
 export default function QueryNode({ data, resetHighlight }: Props) {
-    const { id, name, fields, type } = data;
+    const { id, name, selectClause, type } = data;
     const { setEdges } = useReactFlow();
 
     const onFieldClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, field: Field, index: number) => {
@@ -66,7 +66,7 @@ export default function QueryNode({ data, resetHighlight }: Props) {
                 return {
                     ...e,
                     animated: true,
-                    className: EDGE_HIGHLIGHT_CLASS,
+                    className: field.isAmbiguous ? EDGE_AMBIGUOUS_CLASS : EDGE_HIGHLIGHT_CLASS,
                 };
             });
 
@@ -83,7 +83,7 @@ export default function QueryNode({ data, resetHighlight }: Props) {
                 <TypeLabel type={type}></TypeLabel>
             </header>
             <section className='text-sm bg-white'>
-                {fields.map((field, index) => (
+                {selectClause.fields.map((field, index) => (
                     <div data-fieldid={field.id} key={index} tabIndex={index} className="text-xs p-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100 flex justify-between items-center relative overflow-visible"
                         onClick={(event) => onFieldClick(event, field, index)}>
                         {field.alias}

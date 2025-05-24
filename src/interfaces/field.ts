@@ -3,7 +3,7 @@ export interface Field {
     text: string;
     name: string;
     alias: string;
-    references: FieldReference | null;
+    references: FieldReference[];
     isAllSelector: boolean;
     isAmbiguous: boolean;
 }
@@ -13,8 +13,14 @@ export interface InvocationField extends Field {
     parameters: string[];
 }
 
+export enum FieldOrigin {
+    CTE = 'cte',
+    JOIN = 'join',
+    REFERENCE = 'reference',
+}
+
 export interface FieldReference {
   fieldId: string;
-  parentId: string | null;
-  parentNodeId: string | null;
+  nodeId: string;
+  origin: FieldOrigin;
 }
