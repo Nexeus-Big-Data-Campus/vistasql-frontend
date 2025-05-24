@@ -4,6 +4,7 @@ import { XYPosition } from '@xyflow/react';
 import { Query } from '../interfaces/query';
 import { Join } from '../interfaces/join';
 import { Reference } from '../interfaces/reference';
+import { Field } from '../interfaces/field';
 
 //TODO: MOVE TO INTERFACE FILE
 export interface FlowNode {
@@ -88,57 +89,85 @@ const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
     return treeNodes;
 };
 
-const buildLayout = (flowNodes: FlowNode[]): [FlowNode[], any[]] => {
-    const allEdges: any[] = [];
+const buildLayout = (flowNodes: FlowNode[], edges: any[]): FlowNode[] => {
     const g = new dagre.graphlib.Graph();
+
     g.setGraph({
         rankdir: 'LR',
         nodesep: 100,
         ranksep: 100,
     });
-    g.setDefaultEdgeLabel(() => ({}));
 
     flowNodes.forEach((node) => {
         const size = getNodeSize(node);
         g.setNode(node.id, size);
-        
-        if (node.parent) {
-            g.setEdge(node.id, node.parent);
-            allEdges.push({
-                id: `${node.id}-${node.parent}`,
-                source: node.id,
-                target: node.parent,
-                label: node.edgelLabel,
-                sourceHandle: 'source',
-                targetHandle: 'target'
-            });
-        }
     });
 
-    if (g.nodeCount() === 1) {
-        return [flowNodes, []];
-    }
+    edges.forEach((edge) => {
+        g.setEdge(edge.source, edge.target, {
+            label: edge.edgelLabel,
+            sourceHandle: edge.sourceHandle,
+            targetHandle: edge.targetHandle,
+        });
+    });
 
     dagre.layout(g);
-    flowNodes.forEach((node) => {
+    const graphNodes = flowNodes.map((node) => {
         const nodeWithPosition = g.node(node.id);
-        node.position = {
-            x: nodeWithPosition.x,
-            y: nodeWithPosition.y,
+
+        return {
+            ...node,
+            position: {
+                x: nodeWithPosition.x,
+                y: nodeWithPosition.y,
+            },
         };
     });
 
-    return [flowNodes, allEdges];
+    return graphNodes;
 };
 
 export const useQueryFlow = (queryTree: Query[]) => {
+    
+    const getAllEdgesFromTree = (nodes: FlowNode[]) => {
+        return nodes.reduce((acc: any[], node) => {
+            const data = node.data as any;
+            const fields = data.fields ?? [];
+
+            fields.forEach((field: Field) => {
+                const fieldId = field.id;
+                const fieldReference = field.references?.fieldId;
+                const fieldNodeId = field.references?.parentNodeId;
+
+                if (!fieldReference || !fieldNodeId) {
+                    return;
+                }
+
+                const edgeId = `${fieldReference}-${fieldId}` + (field.references?.parentId ?? ''); 
+
+                acc.push({
+                    id: edgeId,
+                    source: `${fieldNodeId}`,
+                    target: node.id,
+                    sourceHandle: `${fieldReference}-source`,
+                    targetHandle: `${fieldId}-target`,
+                });
+            });
+
+            return acc;
+        }, []);
+    }
+
     const [nodes, edges] = useMemo(() => {
         if (!queryTree) {
             return [[], []];
         }
 
         const allNodes = queryTree.map((node) => flattenQueryTree(node)).flat();
-        return buildLayout(allNodes);
+        const allEdges = getAllEdgesFromTree(allNodes);
+        const graphNodes = buildLayout(allNodes, allEdges);
+
+        return [graphNodes, allEdges];
     }, [queryTree]);
 
     return { nodes, edges };

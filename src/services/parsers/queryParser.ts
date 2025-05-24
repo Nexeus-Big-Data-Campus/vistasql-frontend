@@ -1,10 +1,12 @@
 import murmur from "murmurhash-js";
-import { Query } from "../interfaces/query";
 import {Language, Node, Parser} from "web-tree-sitter";
-import { Join } from "../interfaces/join";
-import { Reference } from "../interfaces/reference";
-import { LexicalError } from "../interfaces/error";
-import { Field } from "../interfaces/field";
+import { Join } from "../../interfaces/join";
+import { Reference } from "../../interfaces/reference";
+import { LexicalError } from "../../interfaces/error";
+import { Field, FieldReference, InvocationField } from "../../interfaces/field";
+import { getDirectChildByType, getNodeTypesInCurrentScope, findAllSubqueries } from "./utils";
+import { processColumn } from "./fieldParser";
+import { Query } from "../../interfaces/query";
 
 let parser: Parser;
 
@@ -125,7 +127,12 @@ function getFromReferences(node: Node, children: Query[]): Reference[] {
         });
     });
 
-    return references;
+    // Filter out references that are already in the children
+    return references.filter((reference) => {
+        return children.reduce((acum, child) => {
+            return acum && child.name !== reference.name;
+        }, true);
+    });
 }
 
 function getQueryErrors(rootNode: Node): LexicalError[] {
@@ -211,8 +218,11 @@ function getSelectFields(selectClause: Node | null, references: Reference[], joi
     }
 
     const selectExpression = getNodeTypesInCurrentScope(selectClause, 'select_expression')[0];
-    const terms = selectExpression?.namedChildren.filter((child) => child?.type === 'term');
-    let fields: Field[] = terms.filter((t: Node | null) => !!t).map((t: Node) => processField(t, references, joins, children));
+    const terms = selectExpression?.namedChildren.filter((child: Node | null) => child?.type === 'term');
+    let fields: Field[] = terms.filter((t: Node | null) => !!t)
+                                .map((t: Node) => processColumn(t, references, joins, children))
+                                .filter((f: Field | null) => !!f) as Field[];
+
     const hasAllSelector = fields.reduce((acum, field) => acum || field.isAllSelector, false);
 
     if (hasAllSelector) {
@@ -226,7 +236,7 @@ function getSelectFields(selectClause: Node | null, references: Reference[], joi
 
         // Add the fields from the subquery inside the FROM clause
         children.forEach((c: Query) => {
-            if (c.type !== 'relation') {
+            if (c.type !== 'relation' && c.type !== 'cte') {
                 return;
             }
 
@@ -237,102 +247,24 @@ function getSelectFields(selectClause: Node | null, references: Reference[], joi
     return fields;
 }
 
-function processField(term: Node, references: Reference[], joins: Join[], queryChildren: Query[]): Field {
-    const field = term?.text;
-    const text = field ?? '';
-    const alias = term?.childForFieldName('alias')?.text;
-    const value = term?.childForFieldName('value')?.type;
-    const isSelectAll = value === 'all_fields';
-    const [originAlias, fieldName] = text.split('.');
-    const name = text.includes('.') && (value !== 'invocation' && value !== 'subquery') ? fieldName : text;
-    let origin: string[] = [];
-    let id: string | undefined = undefined;
-
-    if(value !== 'invocation' && value !== 'subquery') {
-        if (originAlias && fieldName) {
-            const referencedTable = queryChildren.filter(qc => qc.name === originAlias || qc.alias === originAlias);
-            
-            // Grab field from subquery
-            referencedTable.forEach(table => {
-                table.fields.forEach(f => {
-                    if(f.name === fieldName || f.alias === fieldName) {
-                        id = f.id;
-                        origin.push(table.id);
-                        origin = origin.concat(f.origin);
-                        f.origin = origin;
-                    }
-                });
-            });
-
-            //Reference by alias
-            [...references, ...joins].forEach(ref => {
-                if(ref.alias === originAlias) {
-                    origin.push(ref.id);
-                }
-            });
-        } else {
-            // Search for fields without table alias
-            queryChildren.forEach((table) => {
-                table.fields.forEach((f) => {
-                    if (f.name === name || f.alias === alias) {
-                        id = f.id;
-                        origin.push(table.id);
-                        origin = origin.concat(f.origin);
-                        f.origin = origin;
-                    }
-                });
-            });
-        }
-    }
-
-    return {
-        id: id ?? murmur.murmur3(field + Math.random() * 1000),
-        name,
-        text,
-        alias: alias ?? text,
-        isAllSelector: isSelectAll,
-        origin,
-    };
-}
-
 function concatChildrenFields(node: Query, fields: Field[]): Field[] {
     return fields.concat(
         node.fields
             .filter((f) => !f.isAllSelector)
-            .map((f) => ({
-                ...f,
-                origin: [...f.origin, node.id], // Accumulate origin
-            }))
+            .map((f) => {
+                const references: FieldReference | null = !f.references ? null : {
+                    fieldId: f.id,
+                    parentId: f.references?.parentId,
+                    parentNodeId: node.id,
+                };
+
+                return {
+                    ...f,
+                   references, // Accumulate origin
+                };
+            })
     );
 }
 
-
-function getDirectChildByType(node: Node, type: string): (Node | null)[] {
-    return node.namedChildren.filter((child) => child?.type === type);
-}
-
-// Return all nodes of a given type without entering subqueries
-function getNodeTypesInCurrentScope(node: Node, type: string): Node[] {
-    const hits: Node[] = [];
-    const children = node.namedChildren;
-    const heap = [...children];
-    while(heap.length > 0) {
-        const currentNode = heap.pop();
-        if(currentNode?.type === type) {
-            hits.push(currentNode);
-        }
-        
-        if(currentNode?.type !== 'subquery' && currentNode?.type !== 'cte') {
-            heap.push(...currentNode?.namedChildren ?? []);
-        }
-    }
-
-    return hits;
-}
-
-function findAllSubqueries(node: Node): Node[] {
-    return getNodeTypesInCurrentScope(node, 'subquery');
-}
-
-export default {parseQuery};
+export default { parseQuery };
 

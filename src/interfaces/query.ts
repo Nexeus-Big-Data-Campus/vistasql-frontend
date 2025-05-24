@@ -3,7 +3,6 @@ import { Field } from "./field";
 import { Join } from "./join";
 import { Reference } from "./reference";
 
-
 export interface Query {
     id: string;
     name: string;
