@@ -12,7 +12,7 @@ import { AppThemeProvider } from './theme/ThemeContext';
 function App() {
   
   const [currentPath, setCurrentPath] = useState(window.location.pathname);  
-  const [isLoggedIn, setIsLoggedIn] = useState(true); 
+  const [isLoggedIn, setIsLoggedIn] = useState(true); //se cambia manual para simular que esta en On/Off login
  
   const navigateTo = useCallback((path: string) => {
     window.history.pushState({}, '', path);
