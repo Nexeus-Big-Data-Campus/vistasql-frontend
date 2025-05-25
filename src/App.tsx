@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router';
 import Home from './pages/Home'
 import MainEditor from './pages/MainEditor';
 import '@fontsource/roboto';
+import DashboardAdmin from './pages/DashboardAdmin';
 
 
 const router = createBrowserRouter([
@@ -14,6 +15,10 @@ const router = createBrowserRouter([
     path: '/editor',
     element: <MainEditor />,
   },
+  {
+    path: '/admin',
+    element: <DashboardAdmin />,
+  }
 ]);
 
 function App() {
