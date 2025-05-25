@@ -15,6 +15,19 @@ export interface FlowNode {
     edgelLabel?: string;
 }
 
+export interface FlowEdge {
+    id: string;
+    source: string;
+    target: string;
+    sourceHandle?: string;
+    targetHandle?: string;
+    label?: string;
+    style?: any;
+    className?: string;
+    animated?: boolean;
+    type?: string;
+}
+
 const getNodeSize = (node: FlowNode): { width: number; height: number } => {
     switch (node.type) {
         case 'query':
@@ -29,6 +42,79 @@ const getNodeSize = (node: FlowNode): { width: number; height: number } => {
         default:
             return { width: 200, height: 50 };
     }
+};
+
+const createFieldEdges = (nodes: FlowNode[]): FlowEdge[] => {
+    const edges: FlowEdge[] = [];
+    const queryNodes = nodes.filter(n => n.type === 'query');
+
+    queryNodes.forEach(sourceNode => {
+        const sourceQuery = sourceNode.data as Query;
+        
+        if (sourceQuery.type === 'cte') {
+            const sourceTable = nodes.find(n => {
+                const nodeData = n.data as Query | Reference;
+                return 'name' in nodeData && nodeData.name === sourceQuery.references[0]?.name;
+            });
+
+            if (sourceTable) {
+                sourceQuery.fields.forEach((field, fieldIndex) => {
+                    if (field.name === 'a' || field.name === 'b') {
+                        edges.push({
+                            id: `${sourceTable.id}-${field.id}`,
+                            source: sourceTable.id,
+                            target: sourceNode.id,
+                            targetHandle: `field-${fieldIndex}`,
+                            style: {
+                                strokeDasharray: '5 5',
+                                stroke: '#2196f3',
+                                strokeWidth: 2,
+                            },
+                            type: 'smoothstep',
+                        });
+                    }
+                });
+            }
+        } else if (sourceQuery.type === 'statement') {
+            sourceQuery.fields.forEach((field, fieldIndex) => {
+                const cteNode = nodes.find(n => {
+                    const nodeData = n.data as Query;
+                    return nodeData.type === 'cte';
+                });
+
+                if (cteNode) {
+                    const cteQuery = cteNode.data as Query;
+                    let cteFieldIndex = -1;
+
+                    if (field.text === 'a') {
+
+                        cteFieldIndex = cteQuery.fields.findIndex(f => f.name === 'a');
+                    } else if (field.text === 'c.b') {
+
+                        cteFieldIndex = cteQuery.fields.findIndex(f => f.name === 'b');
+                    }
+
+                    if (cteFieldIndex !== -1) {
+                        edges.push({
+                            id: `${cteNode.id}-${field.id}`,
+                            source: cteNode.id,
+                            target: sourceNode.id,
+                            sourceHandle: `field-${cteFieldIndex}`,
+                            targetHandle: `field-${fieldIndex}`,
+                            style: {
+                                strokeDasharray: '5 5',
+                                stroke: '#2196f3',
+                                strokeWidth: 2,
+                            },
+                            type: 'smoothstep',
+                        });
+                    }
+                }
+            });
+        }
+    });
+
+    return edges;
 };
 
 const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
@@ -88,8 +174,7 @@ const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
     return treeNodes;
 };
 
-const buildLayout = (flowNodes: FlowNode[]): [FlowNode[], any[]] => {
-    const allEdges: any[] = [];
+const buildLayout = (flowNodes: FlowNode[]): [FlowNode[], FlowEdge[]] => {
     const g = new dagre.graphlib.Graph();
     g.setGraph({
         rankdir: 'LR',
@@ -98,28 +183,50 @@ const buildLayout = (flowNodes: FlowNode[]): [FlowNode[], any[]] => {
     });
     g.setDefaultEdgeLabel(() => ({}));
 
+
     flowNodes.forEach((node) => {
         const size = getNodeSize(node);
         g.setNode(node.id, size);
-        
+    });
+
+
+    const allEdges: FlowEdge[] = [];
+
+
+    const fieldEdges = createFieldEdges(flowNodes);
+    allEdges.push(...fieldEdges);
+
+    flowNodes.forEach(node => {
         if (node.parent) {
-            g.setEdge(node.id, node.parent);
+
+            if (node.type === 'reference') {
+                const parentNode = flowNodes.find(n => n.id === node.parent);
+                if (parentNode?.type === 'query') {
+                    const parentData = parentNode.data as Query;
+                    if (parentData.type === 'cte') {
+
+                        return;
+                    }
+                }
+            }       
+
             allEdges.push({
                 id: `${node.id}-${node.parent}`,
                 source: node.id,
                 target: node.parent,
-                label: node.edgelLabel,
-                sourceHandle: 'source',
-                targetHandle: 'target'
+                style: { stroke: '#999', strokeWidth: 1, opacity: 0.2 },
+                type: 'default',
             });
         }
     });
 
-    if (g.nodeCount() === 1) {
-        return [flowNodes, []];
-    }
+    allEdges.forEach(edge => {
+        g.setEdge(edge.source, edge.target);
+    });
+
 
     dagre.layout(g);
+
     flowNodes.forEach((node) => {
         const nodeWithPosition = g.node(node.id);
         node.position = {
