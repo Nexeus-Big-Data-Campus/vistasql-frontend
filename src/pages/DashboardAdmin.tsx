@@ -23,7 +23,9 @@ const menuItems = [
 const DashboardAdmin: React.FC = () => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [registrationData, setRegistrationData] = useState<RegistrationData[]>([]);
+  const [averageSessionDuration, setAverageSessionDuration] = useState<string>('00:00:00');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  
 
   useEffect(() => {    
     fetch("/api/user-stats")
@@ -32,6 +34,9 @@ const DashboardAdmin: React.FC = () => {
     fetch("/api/user-registration")
       .then(res => res.json())
       .then(setRegistrationData);
+    fetch("/api/average-session-duration")
+      .then(res => res.json())
+      .then(data => setAverageSessionDuration(data.average_duration));
   }, []);
 
 const renderMainContent = () => {
@@ -59,7 +64,7 @@ const renderMainContent = () => {
               <Card>
                 <CardContent>
                   <Typography variant="subtitle1">Avg session duration</Typography>
-                  <Typography variant="h3">00:30:20</Typography>
+                  <Typography variant="h3">{averageSessionDuration ?? "00:00:00"}</Typography>
                 </CardContent>
               </Card>
             </Grid>
