@@ -25,36 +25,13 @@ const DashboardAdmin: React.FC = () => {
   const [registrationData, setRegistrationData] = useState<RegistrationData[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  useEffect(() => {
-    //Utilando backend de estadísticas de usuarios
-    /*     fetch("/api/user-stats")
+  useEffect(() => {    
+    fetch("/api/user-stats")
       .then(res => res.json())
-      .then(setUserStats); */
-
-    // Simulando datos de estadisticas de usuarios
-    setTimeout(() => {
-      setUserStats({
-        total_users: 157,
-        last_month: 12,
-      });
-    }, 500);
-
-    // utilizando backend de registro de usuarios
-/*     fetch("/api/user-registration")
+      .then(setUserStats);    
+    fetch("/api/user-registration")
       .then(res => res.json())
       .then(setRegistrationData);
-  }, []); */
-
-    // Simulando datos de registro de usuarios
-    setTimeout(() => {
-      setRegistrationData([
-        { date: "2023-10-01", count: 1 },
-        { date: "2023-10-02", count: 2 },
-        { date: "2023-10-03", count: 3 },
-        { date: "2023-10-04", count: 7 },
-        { date: "2023-10-05", count: 5 },
-      ]);
-    }, 500);
   }, []);
 
 const renderMainContent = () => {
