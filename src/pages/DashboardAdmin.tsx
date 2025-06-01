@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Divider, Button, Box, Drawer, List, ListItem, ListItemText, AppBar, Toolbar, Typography, Grid, Card, CardContent } from "@mui/material";
+import { ListItemButton, Grid, Divider, Button, Box, Drawer, List, ListItem, ListItemText, AppBar, Toolbar, Typography, Card, CardContent } from "@mui/material";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 
 const drawerWidth = 200;
@@ -26,7 +26,6 @@ const DashboardAdmin: React.FC = () => {
   const [averageSessionDuration, setAverageSessionDuration] = useState<string>('00:00:00');
   const [selectedIndex, setSelectedIndex] = useState(0);
   
-
   useEffect(() => {    
     fetch("/api/user-stats")
       .then(res => res.json())
@@ -52,7 +51,7 @@ const renderMainContent = () => {
             </Toolbar>
           </AppBar>
           <Grid container spacing={2}>
-            <Grid item xs={12} md={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <Card>
                 <CardContent>
                   <Typography variant="subtitle1">Total users</Typography>
@@ -60,7 +59,15 @@ const renderMainContent = () => {
                 </CardContent>
               </Card>
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <Card>
+                <CardContent>
+                  <Typography variant="subtitle1">Last month</Typography>
+                  <Typography variant="h3">{userStats?.last_month ?? "-"}</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid size={{ xs: 12, md: 3.5 }}>
               <Card>
                 <CardContent>
                   <Typography variant="subtitle1">Avg session duration</Typography>
@@ -131,8 +138,7 @@ const renderMainContent = () => {
         <Divider />
         <List>
           {menuItems.map((item, index) => (
-            <ListItem
-              button
+            <ListItemButton
               key={item.label}
               selected={selectedIndex === index}
               onClick={() => setSelectedIndex(index)}
@@ -142,7 +148,7 @@ const renderMainContent = () => {
               }}
             >
               <ListItemText primary={item.label} />
-            </ListItem>
+            </ListItemButton>
           ))}
         </List>
       </Drawer>
