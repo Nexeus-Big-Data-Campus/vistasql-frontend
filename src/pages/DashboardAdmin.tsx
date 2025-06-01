@@ -22,7 +22,7 @@ const menuItems = [
 
 const DashboardAdmin: React.FC = () => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [registrationData, setRegistrationData] = useState<RegistrationData[]>([]);
+  const [registrationData, setRegistrationData] = useState<RegistrationData[]>([{date:"2025-05-27", count:12}, {date:"2025-05-28", count:8}, {date:"2025-05-29", count:19}]);
   const [averageSessionDuration, setAverageSessionDuration] = useState<string>('00:00:00');
   const [selectedIndex, setSelectedIndex] = useState(0);
   
