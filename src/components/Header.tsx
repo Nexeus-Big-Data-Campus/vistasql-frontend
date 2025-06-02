@@ -4,15 +4,15 @@ import Toolbar from "@mui/material/Toolbar";
 import Button from "@mui/material/Button";
 import { useContext } from "react";
 import { UserContext } from "../contexts/UserContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 export default function Header() {
     const { user, logout } = useContext(UserContext);
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        logout();          // Limpia datos de usuario y token
-        navigate("/login"); // Redirige al login
+        logout(); 
+        navigate("/login");
     };
 
     return (
