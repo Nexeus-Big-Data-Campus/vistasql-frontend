@@ -24,6 +24,8 @@ const DashboardAdmin: React.FC = () => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [registrationData, setRegistrationData] = useState<RegistrationData[]>([{date:"2025-05-27", count:12}, {date:"2025-05-28", count:8}, {date:"2025-05-29", count:19}]);
   const [averageSessionDuration, setAverageSessionDuration] = useState<string>('00:00:00');
+  const [usersData, setUsersData] = useState<any[]>([]);
+  const [usersFeedback, setUsersFeedback] = useState<any[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   
   useEffect(() => {    
@@ -35,7 +37,13 @@ const DashboardAdmin: React.FC = () => {
       .then(setRegistrationData);
     fetch("/api/average-session-duration")
       .then(res => res.json())
-      .then(data => setAverageSessionDuration(data.average_duration));
+      .then(setAverageSessionDuration);
+    fetch("/api/users_data")
+      .then(res => res.json())
+      .then(setUsersData);
+    fetch("/api/users_feedback")
+      .then(res => res.json())
+      .then(setUsersFeedback);
   }, []);
 
 const renderMainContent = () => {
