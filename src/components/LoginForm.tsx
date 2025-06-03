@@ -1,7 +1,7 @@
 // src/components/LoginForm.tsx
 import React, { useState, useContext } from "react";
 import { UserContext } from "../contexts/UserContext";
-import { login as apiLogin } from "../services/QueryParser/ApiService";
+import { login as apiLogin } from "../services/ApiService";
 import { Button, TextField, Typography } from "@mui/material";
 
 interface LoginFormProps {
