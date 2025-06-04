@@ -10,6 +10,7 @@ import { FlowNode, useQueryFlow } from '../../hooks/useQueryFlow';
 
 export const FIELD_HIGHLIGHT_CLASS = 'highlight-field';
 export const EDGE_HIGHLIGHT_CLASS = 'highlight-edge';
+export const EDGE_AMBIGUOUS_CLASS = 'highlight-ambiguous-edge';
 
 interface Props {
     queryTree: Query[]
@@ -29,6 +30,7 @@ export default function QueryDisplay({ queryTree }: Props) {
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [nodes, setNodes] = useNodesState([]);
     const { nodes: memoizedNodes, edges: memoizedEdges } = useQueryFlow(queryTree);
+
     const nodeTypes = useMemo(() => ({
         query: (props: any) => <QueryNode {...props} resetHighlight={resetHighlight}></QueryNode>,
         join: JoinNode,
@@ -40,9 +42,8 @@ export default function QueryDisplay({ queryTree }: Props) {
         setEdges(memoizedEdges as any);
     }, [memoizedNodes, memoizedEdges]);
 
-
     const onNodesChange = () => {
-        // flowInstance?.fitView();
+        flowInstance?.fitView();
     }
 
     const onCanvasClick = () => {

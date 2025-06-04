@@ -1,15 +1,15 @@
 import { useMemo } from 'react';
 import dagre from '@dagrejs/dagre';
 import { XYPosition } from '@xyflow/react';
-import { Query } from '../interfaces/query';
+import { Query, TableReference } from '../interfaces/query';
 import { Join } from '../interfaces/join';
-import { Reference } from '../interfaces/reference';
+import { Field, FieldOrigin, FieldReference } from '../interfaces/field';
 
 //TODO: MOVE TO INTERFACE FILE
 export interface FlowNode {
     id: string;
     type: string;
-    data: Query | Join | Reference;
+    data: Query | Join | TableReference;
     position: XYPosition;
     parent?: string;
     edgelLabel?: string;
@@ -19,12 +19,12 @@ const getNodeSize = (node: FlowNode): { width: number; height: number } => {
     switch (node.type) {
         case 'query':
             const query = node.data as Query;
-            const height = query.fields.length * 15 + 60;
+            const height = query.selectClause.fields.length * 15 + 60;
             return { width: 200, height };
         case 'join':
             return { width: 200, height: 50 };
         case 'reference':
-            const reference = node.data as Reference;
+            const reference = node.data as TableReference;
             return { width: reference.name.length * 7.5, height: 50 };
         default:
             return { width: 200, height: 50 };
@@ -44,7 +44,7 @@ const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
         edgelLabel: node.alias ?? undefined
     });
 
-    node.children.forEach((child) => {
+    node.cte.forEach((child) => {
         treeNodes.push(...flattenQueryTree(child, `${node.id}`));
     });
 
@@ -59,7 +59,7 @@ const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
             edgelLabel: join.predicate,
         });
 
-        const reference = { name: join.source, alias: join.alias } as Reference;
+        const reference = { name: join.source, alias: join.alias } as TableReference;
         treeNodes.push({
             id: `${id}-join-ref`,
             type: 'reference',
@@ -70,8 +70,8 @@ const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
         });
     });
 
-    const newReferences = node.references.filter((ref) => {
-        return !node.children.reduce((acum, child) => acum || child.name === ref.name, false);
+    const newReferences = node.fromClause.references.filter((ref) => {
+        return !node.cte.reduce((acum, child) => acum || child.name === ref.name, false);
     });
 
     newReferences.forEach((reference) => {
@@ -88,57 +88,93 @@ const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
     return treeNodes;
 };
 
-const buildLayout = (flowNodes: FlowNode[]): [FlowNode[], any[]] => {
-    const allEdges: any[] = [];
+const buildLayout = (flowNodes: FlowNode[], edges: any[]): FlowNode[] => {
     const g = new dagre.graphlib.Graph();
+
     g.setGraph({
         rankdir: 'LR',
         nodesep: 100,
         ranksep: 100,
     });
-    g.setDefaultEdgeLabel(() => ({}));
 
     flowNodes.forEach((node) => {
         const size = getNodeSize(node);
         g.setNode(node.id, size);
-        
-        if (node.parent) {
-            g.setEdge(node.id, node.parent);
-            allEdges.push({
-                id: `${node.id}-${node.parent}`,
-                source: node.id,
-                target: node.parent,
-                label: node.edgelLabel,
-                sourceHandle: 'source',
-                targetHandle: 'target'
-            });
-        }
     });
 
-    if (g.nodeCount() === 1) {
-        return [flowNodes, []];
-    }
+    edges.forEach((edge) => {
+        g.setEdge(edge.source, edge.target, {
+            label: edge.edgelLabel,
+            sourceHandle: edge.sourceHandle,
+            targetHandle: edge.targetHandle,
+        });
+    });
 
     dagre.layout(g);
-    flowNodes.forEach((node) => {
+    const graphNodes = flowNodes.map((node) => {
         const nodeWithPosition = g.node(node.id);
-        node.position = {
-            x: nodeWithPosition.x,
-            y: nodeWithPosition.y,
+
+        return {
+            ...node,
+            position: {
+                x: nodeWithPosition.x,
+                y: nodeWithPosition.y,
+            },
         };
     });
 
-    return [flowNodes, allEdges];
+    return graphNodes;
 };
 
 export const useQueryFlow = (queryTree: Query[]) => {
+    
+    const getAllEdgesFromTree = (nodes: FlowNode[]) => {
+        return nodes.reduce((acc: any[], node) => {
+            // Eugh: ugly
+            const data = node.data as any;
+            const fields = 'selectClause' in data ? data.selectClause?.fields : [];
+            const joins = 'joins' in data ? data.joins : [];
+
+            fields.forEach((field: Field) => {
+                const fieldId = field.id;
+                field.references.forEach((ref: FieldReference, i: number) => {
+                    const sourceHandle = ref.origin !== FieldOrigin.CTE ? 'source' : `${ref.fieldId}-source`;
+                    const edge = {
+                        id: `${ref.fieldId}-${fieldId}`,
+                        source: `${ref.nodeId}`,
+                        target: node.id,
+                        sourceHandle: sourceHandle,
+                        targetHandle: `${fieldId}-target`,
+                    };
+                    acc.push(edge);
+                });
+            });
+
+            joins.forEach((join: Join) => {
+                const edge = {
+                    id: `${node.id}-${join.id}`,
+                    source: `${join.id}-join-ref`,
+                    target: `${join.id}`,
+                    sourceHandle: 'source',
+                    targetHandle: 'target',
+                };
+                acc.push(edge);
+            });
+
+            return acc;
+        }, []);
+    }
+
     const [nodes, edges] = useMemo(() => {
         if (!queryTree) {
             return [[], []];
         }
 
         const allNodes = queryTree.map((node) => flattenQueryTree(node)).flat();
-        return buildLayout(allNodes);
+        const allEdges = getAllEdgesFromTree(allNodes);
+        const graphNodes = buildLayout(allNodes, allEdges);
+
+        return [graphNodes, allEdges];
     }, [queryTree]);
 
     return { nodes, edges };
