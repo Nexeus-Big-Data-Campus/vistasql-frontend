@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
-import QueryParser from '../../services/QueryParser/QueryParser';
+import QueryParser from '../../services/QueryParser';
 import "prismjs/components/prism-sql";
 import { Query } from "../../interfaces/query";
 
