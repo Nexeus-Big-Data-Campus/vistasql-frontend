@@ -4,6 +4,7 @@ export interface Field {
     name: string;
     alias: string;
     references: FieldReference[];
+    allReferences?: FieldReference[];
     isAllSelector: boolean;
     isAmbiguous: boolean;
 }

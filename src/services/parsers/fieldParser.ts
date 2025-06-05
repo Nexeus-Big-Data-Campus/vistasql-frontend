@@ -22,6 +22,7 @@ export function processColumn(term: Node, references: TableReference[], joins: J
 }
 
 function processAllFieldsSelector(references: TableReference[], joins: Join[]): Field {
+    const refs = getFromClauseAndJoinsReferences(references, joins);
     return {
         id: murmur.murmur3('all_fields' + Math.random() * 1000),
         name: '*',
@@ -29,9 +30,30 @@ function processAllFieldsSelector(references: TableReference[], joins: Join[]): 
         alias: '*',
         isAllSelector: true,
         isAmbiguous: false,
-        references: getFromClauseAndJoinsReferences(references, joins)
+        references: refs,
+        allReferences: refs
     };
-}   
+}
+
+function getAllReferencesRecursively(field: Field, cte: Query[]): FieldReference[] {
+    if (!field.references || field.references.length === 0) {
+        return [];
+    }
+    let result: FieldReference[] = [];
+    for (const ref of field.references) {
+        result.push(ref);
+        if (ref.origin === FieldOrigin.CTE) {
+            // Busca el campo referenciado en el CTE
+            const cteField = cte
+                .flatMap(table => table.selectClause.fields)
+                .find(f => f.id === ref.fieldId);
+            if (cteField) {
+                result = result.concat(getAllReferencesRecursively(cteField, cte));
+            }
+        }
+    }
+    return result;
+}
 
 function processInvocationField(term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined): InvocationField {
     const invocation = getDirectChildByType(term, 'invocation')[0];
@@ -54,10 +76,41 @@ function processInvocationField(term: Node, references: TableReference[], joins:
     };
 }
 
-function processField(term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined): Field {
+function processField(
+    term: Node,
+    references: TableReference[],
+    joins: Join[],
+    cte: Query[],
+    alias: string | undefined
+): Field {
     const [_originAlias, fieldName] = term.text.split('.');
     const fieldReferences = findReferencesForField(term, references, joins, cte, alias ?? term.text);
-    const id = fieldReferences.length === 1 && fieldReferences[0].origin === FieldOrigin.CTE ? fieldReferences[0].fieldId : murmur.murmur3(term.text + Math.random() * 1000);
+    let propagatedReferences = fieldReferences;
+    let allReferences = fieldReferences;
+
+    if (
+        fieldReferences.length === 1 &&
+        fieldReferences[0].origin === FieldOrigin.CTE &&
+        cte.length > 0
+    ) {
+        const cteField = cte
+            .flatMap(table => table.selectClause.fields)
+            .find(f => f.id === fieldReferences[0].fieldId);
+        if (cteField && cteField.references && cteField.references.length > 0) {
+            propagatedReferences = [
+                createFieldReference(cteField.id, fieldReferences[0].nodeId, FieldOrigin.CTE)
+            ];
+            allReferences = [
+                ...propagatedReferences,
+                ...getAllReferencesRecursively(cteField, cte)
+            ];
+        }
+    }
+
+    const id =
+        propagatedReferences.length === 1 && propagatedReferences[0].origin === FieldOrigin.CTE
+            ? propagatedReferences[0].fieldId
+            : murmur.murmur3(term.text + Math.random() * 1000);
 
     return {
         id,
@@ -65,9 +118,10 @@ function processField(term: Node, references: TableReference[], joins: Join[], c
         text: term.text,
         alias: alias ?? term.text,
         isAllSelector: false,
-        references: fieldReferences,
-        isAmbiguous: fieldReferences.length > 1,
-    }
+        references: propagatedReferences, 
+        allReferences, 
+        isAmbiguous: propagatedReferences.length > 1,
+    };
 }
 
 function findReferencesForField(term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined): FieldReference[] {
@@ -116,6 +170,7 @@ function findReferencesForField(term: Node, references: TableReference[], joins:
         cte.forEach((table) => {
             table.selectClause.fields.forEach((f) => {
                 if (f.alias === alias) {
+                    // Siempre referencia directa al campo del CTE
                     fieldReferences.push(createFieldReference(f.id, table.id, FieldOrigin.CTE));
                 }
             });
