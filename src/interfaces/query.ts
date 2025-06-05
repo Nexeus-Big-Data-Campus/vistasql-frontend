@@ -1,8 +1,6 @@
 import { LexicalError } from "./error";
 import { Field } from "./field";
 import { Join } from "./join";
-import { Reference } from "./reference";
-
 
 export interface Query {
     id: string;
@@ -10,9 +8,33 @@ export interface Query {
     alias?: string;
     type: string;
     code: string;
-    fields: Field[];
-    children: Query[];
+    cte: Query[];
+    fromClause: FromClause;
+    selectClause: SelectClause;
+    whereClause: WhereClause;
+    orderByClause: OrderByClause;
     joins: Join[];
-    references: Reference[];
     errors: LexicalError[];
+}
+
+export interface SelectClause {
+    fields: Field[];
+}
+
+export interface WhereClause {
+    code: string;
+}
+
+export interface FromClause {
+    references: TableReference[];
+}
+
+export interface TableReference {
+    id: string;
+    name: string;
+    alias: string;
+}
+
+export interface OrderByClause {
+    fields: Field[];
 }

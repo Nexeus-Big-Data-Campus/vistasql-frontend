@@ -1,5 +1,10 @@
 :root {
     --primary: #1976d2;
+    --warning: #d2c019;
+}
+
+.bg-primary {
+    background-color: var(--primary) !important;
 }
 
 .highlight-field {
@@ -11,4 +16,22 @@
 .highlight-edge path {
     stroke: var(--primary) !important;
     stroke-width: 3px !important;
+}
+
+.highlight-ambiguous-edge path  {
+    stroke: var(--warning) !important;
+    stroke-width: 3px !important;
+}
+
+.react-flow__node {
+    overflow: visible;
+}
+
+
+.highlight-field .invocation-column-text {
+    display: flex !important;
+}
+
+.invocation-column-text {
+    display: none;
 }
