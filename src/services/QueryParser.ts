@@ -250,35 +250,37 @@ function processField(term: Node, references: Reference[], joins: Join[], queryC
 
     if(value !== 'invocation' && value !== 'subquery') {
         if (originAlias && fieldName) {
-            const referencedTable = queryChildren.filter(qc => qc.name === originAlias || qc.alias === originAlias);
-            
-            // Grab field from subquery
-            referencedTable.forEach(table => {
-                table.fields.forEach(f => {
-                    if(f.name === fieldName || f.alias === fieldName) {
-                        id = f.id;
-                        origin.push(table.id);
-                        origin = origin.concat(f.origin);
-                        f.origin = origin;
-                    }
-                });
-            });
-
-            //Reference by alias
+            // First check direct references and joins
             [...references, ...joins].forEach(ref => {
                 if(ref.alias === originAlias) {
                     origin.push(ref.id);
                 }
             });
+
+            // Then check referenced tables (including CTEs)
+            const referencedTable = queryChildren.filter(qc => qc.name === originAlias || qc.alias === originAlias);
+            
+            referencedTable.forEach(table => {
+                // Add the table's ID to track the path through the CTE
+                origin.push(table.id);
+                
+                // Look for matching fields in the referenced table
+                table.fields.forEach(f => {
+                    if(f.name === fieldName || f.alias === fieldName) {
+                        id = f.id;
+                        // Concatenate the field's existing origins to maintain the full chain
+                        origin = origin.concat(f.origin);
+                    }
+                });
+            });
         } else {
-            // Search for fields without table alias
+            // Search for fields without table alias across all available tables
             queryChildren.forEach((table) => {
                 table.fields.forEach((f) => {
-                    if (f.name === name || f.alias === alias) {
+                    if (f.name === name || f.alias === name) {
                         id = f.id;
                         origin.push(table.id);
                         origin = origin.concat(f.origin);
-                        f.origin = origin;
                     }
                 });
             });

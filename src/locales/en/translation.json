@@ -25,7 +25,7 @@
     "successMessage": "Registration successful. You can now log in.",
     "errorMessage": "Registration error. Please try again.",
     "connectionErrorMessage": "Connection error or incorrect credentials.",
-    "alreadyHaveAccountButton": "Already have an account? Log in",
+    "loginButton": "Already have an account? Log in",
     "successKeyword": "successful"
   },
   "loginForm": {

@@ -26,7 +26,7 @@
     "successMessage": "Registro exitoso. Ahora puedes iniciar sesión.",
     "errorMessage": "Error en el registro. Inténtalo de nuevo.",
     "connectionErrorMessage": "Error de conexión o credenciales incorrectas.",
-    "alreadyHaveAccountButton": "¿Ya tienes cuenta? Inicia sesión",
+    "loginButton": "¿Ya tienes cuenta? Inicia sesión",
     "successKeyword": "exitoso"
   },
   "loginForm": {

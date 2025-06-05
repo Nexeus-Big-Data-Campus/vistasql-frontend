@@ -5,16 +5,17 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import { useTranslation } from "react-i18next";
 import { useAppTheme } from "../theme/ThemeContext";
+import { useNavigate } from "react-router-dom"; 
 
 interface HeaderProps {    
-    isLoggedIn?: boolean;
-    navigateTo: (path: string) => void; 
+    isAuthenticated?: boolean;
 }
 
-export default function Header({ isLoggedIn, navigateTo }: HeaderProps) {
+export default function Header({ isAuthenticated }: HeaderProps) {
     const { t, i18n } = useTranslation();
     const [anchorElLang, setAnchorElLang] = useState<null | HTMLElement>(null);
     const { mode, toggleTheme } = useAppTheme();
+    const navigate = useNavigate(); 
 
     const changeLanguage = (lng: string) => {
         i18n.changeLanguage(lng);
@@ -34,19 +35,18 @@ export default function Header({ isLoggedIn, navigateTo }: HeaderProps) {
     return (
         <AppBar component="nav" position="relative">
             <Toolbar>
-                {/* Hacer clickeable el nombre de la app para ir a Home */}
                 <Typography 
                     variant="h6" 
                     component="div" 
                     sx={{ flexGrow: 1, cursor: 'pointer' }} 
-                    onClick={() => navigateTo('/')}
+                    onClick={() => navigate('/')} 
                 >
                     {t('header.appName')}
                 </Typography>                
-                {isLoggedIn ? (                    
+                {isAuthenticated ? (                    
                     <IconButton
                         color="inherit"                        
-                        onClick={() => navigateTo('/profile')}
+                        onClick={() => navigate('/profile')} 
                         aria-label="account of current user"
                         aria-controls="menu-appbar"
                         aria-haspopup="true"
@@ -55,41 +55,33 @@ export default function Header({ isLoggedIn, navigateTo }: HeaderProps) {
                     </IconButton>
                 ) : (                    
                     <>
-                        <Button color="inherit" onClick={() => navigateTo('/login')}>{t('header.login')}</Button>
-                        <Button color="inherit" onClick={() => navigateTo('/register')}>{t('header.signUp')}</Button>
+                        <Button color="inherit" onClick={() => navigate('/login')}>{t('header.login')}</Button>
+                        <Button color="inherit" onClick={() => navigate('/register')}>{t('header.signUp')}</Button>
                     </>
                 )}
-                <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">
-                    {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-                </IconButton>
                 <IconButton
-                    size="large"
-                    aria-label="change language"
-                    aria-controls="menu-language"
-                    aria-haspopup="true"
-                    onClick={handleLanguageMenuOpen}
                     color="inherit"
+                    onClick={handleLanguageMenuOpen}
+                    aria-label="change language"
                 >
                     <TranslateIcon />
                 </IconButton>
                 <Menu
-                    id="menu-language"
+                    id="language-menu"
                     anchorEl={anchorElLang}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'right',
-                    }}
-                    keepMounted
-                    transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'right',
-                    }}
                     open={Boolean(anchorElLang)}
                     onClose={() => handleLanguageMenuClose()}
                 >
-                    <MenuItem onClick={() => handleLanguageMenuClose('en')} disabled={i18n.language === 'en'}>EN</MenuItem>
-                    <MenuItem onClick={() => handleLanguageMenuClose('es')} disabled={i18n.language === 'es'}>ES</MenuItem>
+                    <MenuItem onClick={() => handleLanguageMenuClose('es')}>Español</MenuItem>
+                    <MenuItem onClick={() => handleLanguageMenuClose('en')}>English</MenuItem>
                 </Menu>
+                <IconButton 
+                    color="inherit" 
+                    onClick={toggleTheme} 
+                    aria-label="toggle theme"
+                >
+                    {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                </IconButton>
             </Toolbar>
         </AppBar>
     );

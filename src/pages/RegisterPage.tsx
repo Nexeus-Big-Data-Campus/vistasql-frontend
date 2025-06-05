@@ -1,16 +1,61 @@
-import RegisterForm from "../components/RegisterForm";
+import { useState } from "react";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
+import {
+    TextField,
+    Button,
+    Typography,
+    Alert,
+    CircularProgress,
+    Paper,
+} from "@mui/material";
+import { useTranslation } from "react-i18next";
+import { useNavigation } from "../context/NavigationContext";
+import { ApiService } from "../services/ApiService";
 
-interface RegisterPageProps {
-  onRegisterSuccess: () => void; 
-  navigateTo: (path: string) => void;
-}
- export default function RegisterPage({ onRegisterSuccess, navigateTo }: RegisterPageProps) {  
+export default function RegisterPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [registerStatus, setRegisterStatus] = useState<"success" | "error" | null>(null);
+  const { t } = useTranslation();
+  const { navigateTo } = useNavigation();
+  const apiService = new ApiService();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage("");
+    setRegisterStatus(null);
+
+    try {
+      const response = await apiService.register(email, password);
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage(data.message || t('registerForm.successMessage'));
+        setRegisterStatus("success");
+        navigateTo('/login');
+      } else {
+        setMessage(data.detail || t('registerForm.errorMessage'));
+        setRegisterStatus("error");
+      }
+    } catch (error: any) {
+      setMessage(t('registerForm.connectionErrorMessage'));
+      setRegisterStatus("error");
+      console.error("Register error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoLogin = () => {
+    navigateTo("/login");
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-     
       <Box
         sx={{
           flexGrow: 1,
@@ -22,8 +67,85 @@ interface RegisterPageProps {
         }}
       >
         <Container component="main" maxWidth="sm">
-          {}
-          <RegisterForm onRegisterSuccess={onRegisterSuccess} navigateTo={navigateTo} />
+          <Paper
+            elevation={6}
+            sx={{
+              p: { xs: 2, sm: 4 }, 
+              borderRadius: 3, 
+              maxWidth: 400, 
+              width: "100%", 
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              boxShadow: "0 8px 32px rgba(25, 118, 210, 0.15)", 
+            }}
+          >
+            <Typography variant="h4" component="h1" gutterBottom color="primary">
+              {t('registerForm.title')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              {t('registerForm.subtitle')}
+            </Typography>
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              sx={{
+                width: "100%", 
+                display: "flex",
+                flexDirection: "column",
+                gap: 2, 
+              }}
+            >
+              <TextField
+                label={t('form.emailLabel')}
+                type="email"
+                variant="outlined"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+                fullWidth
+              />
+              <TextField
+                label={t('form.passwordLabel')}
+                type="password"
+                variant="outlined"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                required
+                fullWidth
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                fullWidth
+                size="large"
+                disabled={isLoading}
+                sx={{ mt: 1, fontWeight: "bold", letterSpacing: 1 }}
+              >
+                {isLoading ? <CircularProgress size={24} color="inherit" /> : t('registerForm.submitButton')}
+              </Button>
+            </Box>
+            {message && registerStatus && (
+              <Alert
+                severity={registerStatus}
+                sx={{ width: "100%", mt: 2 }}
+              >
+                {message}
+              </Alert>
+            )}
+            <Button
+              variant="text"
+              color="secondary"
+              onClick={handleGoLogin}
+              sx={{ mt: 2, textTransform: "none" }}
+              fullWidth
+            >
+              {t('registerForm.loginButton')}
+            </Button>
+          </Paper>
         </Container>
       </Box>
     </Box>

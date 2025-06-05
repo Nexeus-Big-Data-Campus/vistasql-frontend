@@ -1,5 +1,3 @@
-
-
 export class ApiService {
   API_URL = import.meta.env.API_URL || "http://localhost:8000";
 
@@ -7,8 +5,8 @@ export class ApiService {
     return await this.makeRequest("/login", "POST", { email, password });
   }
 
-  async signin(name: string, email: string, password: string) {
-    return await this.makeRequest("/signin", "POST", { name,  email, password });
+  async register(email: string, password: string) {
+    return await this.makeRequest("/register", "POST", { email, password });
   }
   
   private async makeRequest(endpoint: string, method: string, body?: any) {
