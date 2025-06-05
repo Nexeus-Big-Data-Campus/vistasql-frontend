@@ -1,7 +1,7 @@
 // src/components/LoginForm.tsx
 import React, { useState, useContext } from "react";
 import { UserContext } from "../contexts/UserContext";
-import { login as apiLogin } from "../services/ApiService";
+import { apiService } from "../services/ApiService";
 import { Button, TextField, Typography } from "@mui/material";
 
 interface LoginFormProps {
@@ -20,7 +20,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     setError("");
 
     try {
-      const data = await apiLogin(email, password);
+      const data = await apiService.login(email, password);
 
       // Ajusta según la respuesta que te dé tu backend
       const token = data.token;

@@ -1,47 +1,56 @@
-const API_URL = "http://127.0.0.1:8000";
-
-function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+type LoginResponse = {
+  token: string;
+  user: {
+    id: number;
+    username: string;
+    email: string;
   };
+};
+export class ApiService {
+  private API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-  const token = localStorage.getItem("token");
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  private getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    const token = localStorage.getItem("token");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    return headers;
   }
 
-  return headers;
-}
+  private async makeRequest<T>(endpoint: string, method: string, body?: any, requireAuth: boolean = false): Promise<T> {
+    const headers = requireAuth ? this.getAuthHeaders() : { "Content-Type": "application/json" };
 
-interface LoginResponse {
-  message: string;
-  [key: string]: any;
-}
+    const response = await fetch(`${this.API_URL}${endpoint}`, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
 
-export async function login(email: string, password: string): Promise<LoginResponse> {
-  const response = await fetch(`${API_URL}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
+    // Manejo de errores
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Request failed");
+    }
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || "Error al iniciar sesión");
+    return await response.json();
   }
 
-  return await response.json();
-}
-
-export async function getUserProfile(): Promise<any> {
-  const response = await fetch(`${API_URL}/profile`, {
-    method: "GET",
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
-    throw new Error("No autorizado o error al obtener el perfil");
+  async login(email: string, password: string):  Promise<LoginResponse> {
+    return await this.makeRequest("/login", "POST", { email, password });
   }
 
-  return await response.json();
+  async signin(name: string, email: string, password: string) {
+    return await this.makeRequest("/signin", "POST", { name, email, password });
+  }
+
+  async getUserProfile() {
+    return await this.makeRequest<any>("/profile", "GET", undefined, true); // requiere auth
+  }
 }
+
+export const apiService = new ApiService();
