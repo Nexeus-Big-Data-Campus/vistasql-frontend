@@ -1,5 +1,5 @@
 import './App.css';
-import { createBrowserRouter, RouterProvider } from 'react-router';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import Home from './pages/Home'
 import MainEditor from './pages/MainEditor';
 import LoginPage from './pages/LoginPage'; 

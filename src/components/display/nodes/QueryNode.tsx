@@ -70,9 +70,13 @@ export default function QueryNode({ data, resetHighlight }: Props) {
             </header>
             <section className='text-sm bg-white'>
                 {fields.map((field, index) => (
-                    <div data-fieldid={field.id} key={index} tabIndex={index} className="text-xs p-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100"
-                        onClick={(event) => onFieldClick(event, field, index)}>
-                        {field.alias}
+                    <div 
+                        data-fieldid={field.id} 
+                        key={`${field.id}-${field.name}`} 
+                        className="text-xs p-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100"
+                        onClick={(event) => onFieldClick(event, field, index)}
+                    >
+                        {field.name}
                     </div>
                 ))}
             </section>

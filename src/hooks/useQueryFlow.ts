@@ -34,9 +34,10 @@ const getNodeSize = (node: FlowNode): { width: number; height: number } => {
 const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
     const treeNodes: FlowNode[] = [];
 
-    // Add root node
+    // Add root node with unique ID
+    const rootNodeId = parentHash ? `${parentHash}-${node.id}` : `${node.id}`;
     treeNodes.push({
-        id: `${node.id}`,
+        id: rootNodeId,
         type: 'query',
         data: node,
         parent: parentHash,
@@ -44,42 +45,45 @@ const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
         edgelLabel: node.alias ?? undefined
     });
 
-    node.children.forEach((child) => {
-        treeNodes.push(...flattenQueryTree(child, `${node.id}`));
+    // Add children with unique IDs
+    node.children.forEach((child, index) => {
+        treeNodes.push(...flattenQueryTree(child, rootNodeId));
     });
 
-    node.joins.forEach((join) => {
-        const id = `${join.id}`;
+    // Add joins with unique IDs
+    node.joins.forEach((join, index) => {
+        const joinId = `${rootNodeId}-join-${index}-${join.id}`;
         treeNodes.push({
-            id,
+            id: joinId,
             type: 'join',
             data: join,
-            parent: `${node.id}`,
+            parent: rootNodeId,
             position: { x: 0, y: 0 },
             edgelLabel: join.predicate,
         });
 
         const reference = { name: join.source, alias: join.alias } as Reference;
         treeNodes.push({
-            id: `${id}-join-ref`,
+            id: `${joinId}-ref-${index}`,
             type: 'reference',
             data: reference,
-            parent: id,
+            parent: joinId,
             position: { x: 0, y: 0 },
             edgelLabel: reference.alias,
         });
     });
 
+    // Add references with unique IDs
     const newReferences = node.references.filter((ref) => {
         return !node.children.reduce((acum, child) => acum || child.name === ref.name, false);
     });
 
-    newReferences.forEach((reference) => {
+    newReferences.forEach((reference, index) => {
         treeNodes.push({
-            id: `${reference.id}`,
+            id: `${rootNodeId}-ref-${index}-${reference.id}`,
             type: 'reference',
             data: reference,
-            parent: `${node.id}`,
+            parent: rootNodeId,
             position: { x: 0, y: 0 },
             edgelLabel: reference.alias,
         });
