@@ -43,25 +43,49 @@ function parseQuery(code: string): Query[] {
         if(!statement) {
             return;
         }
-
-        nodes.push(buildQueryNodeFromTree(statement, statement.type));
+        // Iniciar la construcción del árbol con un contexto de CTEs vacío
+        nodes.push(buildQueryNodeFromTree(statement, statement.type, null, []));
     });
 
     return nodes;
 }
 
-function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | null = null): Query {
-    const ctes = rootNode.descendantsOfType('cte');
+function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | null = null, availableCTEs: Query[] = []): Query {
+    // Encuentra CTEs definidos dentro de este nodo (para subconsultas con su propio WITH)
+    const ctesInNode = rootNode.descendantsOfType('cte');
     const subqueries = findAllSubqueries(rootNode);
     
-    // Uses recursion to build child nodes
-    const cteNodes = processCte(ctes); 
+    // Procesa los CTEs locales, pasándoles el contexto de los CTEs ya disponibles
+    const cteNodes = processCte(ctesInNode, availableCTEs); 
     const subqueryNodes = processSubqueries(subqueries);
-    const children = [...cteNodes, ...subqueryNodes]; 
 
-    const references = getTableReferences(rootNode, children);
+    // Todas las fuentes de datos que este nodo puede referenciar
+    const allAvailableSources = [...availableCTEs, ...cteNodes, ...subqueryNodes];
+
+    // Obtiene todas las referencias de la cláusula FROM
+    const fromReferences = getTableReferences(rootNode, []);
+    
+    // Los "hijos" de este nodo son las fuentes disponibles (CTEs) que se usan en su FROM
+    const childrenOfNode = allAvailableSources.filter(source => 
+        fromReferences.some(ref => ref.name === source.name)
+    );
+
+    // Actualiza el alias en el objeto hijo para que se muestre en el diagrama
+    childrenOfNode.forEach(child => {
+        const ref = fromReferences.find(r => r.name === child.name);
+        if (ref?.alias) {
+            child.alias = ref.alias;
+        }
+    });
+
+    // Las "referencias" finales son aquellas que no son CTEs (tablas base)
+    const references = fromReferences.filter(ref => 
+        !allAvailableSources.some(source => source.name === ref.name)
+    );
+    
     const joins = getJoins(rootNode);
-    const fields = getSelectFields(rootNode, references, joins, children);
+    // Pasamos todas las fuentes disponibles para que la resolución de campos funcione
+    const fields = getSelectFields(rootNode, references, joins, allAvailableSources);
     const errors = getQueryErrors(rootNode);
 
     return {
@@ -71,12 +95,11 @@ function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | nul
         type: type,
         fields,
         joins,
-        children,
+        children: [...childrenOfNode, ...subqueryNodes],
         references,
         errors
     };
 }
-
 function getTableReferences(rootNode: Node, children: Query[]): Reference[] {
     const formClause = getNodeTypesInCurrentScope(rootNode, 'from');
     return formClause.length > 0 ? getFromReferences(formClause[0], children) : [];
@@ -145,27 +168,29 @@ function processSubqueries(subqueries: Node[]): Query[] {
     );
 }
 
-function processCte(ctes: (Node | null)[]): Query[] {
+function processCte(ctes: (Node | null)[], parentContext: Query[] = []): Query[] {
     const cteNodes: Query[] = [];
-    ctes.forEach(cte => {
-        if(!cte) {
-            return null;
-        }
-    
-        const identifierNode = getDirectChildByType(cte, 'identifier');
-        const name = identifierNode ? identifierNode[0]?.text : null;
-        const statement = getDirectChildByType(cte, 'statement');
-        
-        if(!statement || !statement[0]) {
-            return null;
-        }
+    const availableCTEsInScope = [...parentContext]; // Copia mutable del contexto
 
-        cteNodes.push(buildQueryNodeFromTree(statement[0], 'cte', name));
-    })
+    ctes.forEach(cte => {
+        if (!cte) { return; }
+        
+        const firstStatement = getDirectChildByType(cte, 'statement')[0];
+        if (!firstStatement) { return; }
+        
+        const identifierNode = getDirectChildByType(cte, 'identifier');
+        const name = identifierNode[0]?.text ?? null;
+        
+        // Pasa los CTEs ya disponibles al siguiente nodo que se va a construir
+        const newNode = buildQueryNodeFromTree(firstStatement, 'cte', name, availableCTEsInScope);
+        cteNodes.push(newNode);
+        
+        // Añade el nodo recién creado a la lista para que el siguiente CTE lo pueda usar
+        availableCTEsInScope.push(newNode);
+    });
 
     return cteNodes;
 }
-
 
 function getJoins(node: Node): Join[] {
     const joins: Join[] = [];
@@ -241,60 +266,86 @@ function processField(term: Node, references: Reference[], joins: Join[], queryC
     const field = term?.text;
     const text = field ?? '';
     const alias = term?.childForFieldName('alias')?.text;
-    const value = term?.childForFieldName('value')?.type;
-    const isSelectAll = value === 'all_fields';
+    const valueNode = term?.childForFieldName('value');
+    const isSelectAll = valueNode?.type === 'all_fields';
     const [originAlias, fieldName] = text.split('.');
-    const name = text.includes('.') && (value !== 'invocation' && value !== 'subquery') ? fieldName : text;
+    const name = text.includes('.') && (valueNode?.type !== 'invocation' && valueNode?.type !== 'subquery') ? fieldName : text;
     let origin: string[] = [];
     let id: string | undefined = undefined;
 
-    if(value !== 'invocation' && value !== 'subquery') {
-        if (originAlias && fieldName) {
-            const referencedTable = queryChildren.filter(qc => qc.name === originAlias || qc.alias === originAlias);
-            
-            // Grab field from subquery
-            referencedTable.forEach(table => {
-                table.fields.forEach(f => {
-                    if(f.name === fieldName || f.alias === fieldName) {
-                        id = f.id;
-                        origin.push(table.id);
-                        origin = origin.concat(f.origin);
-                        f.origin = origin;
-                    }
-                });
-            });
+    const findOrigin = (aliasToFind: string, nameToFind: string) => {
+        let foundOrigin: string[] = [];
+        let foundId: string | undefined = undefined;
 
-            //Reference by alias
-            [...references, ...joins].forEach(ref => {
-                if(ref.alias === originAlias) {
-                    origin.push(ref.id);
-                }
-            });
-        } else {
-            // Search for fields without table alias
-            queryChildren.forEach((table) => {
-                table.fields.forEach((f) => {
-                    if (f.name === name || f.alias === alias) {
-                        id = f.id;
-                        origin.push(table.id);
-                        origin = origin.concat(f.origin);
-                        f.origin = origin;
+        const allSources = [...queryChildren, ...references, ...joins];
+
+        for (const source of allSources) {
+            const sourceName = 'name' in source ? source.name : '';
+            const sourceAlias = source.alias ?? '';
+            
+            if (sourceAlias === aliasToFind || sourceName === aliasToFind) {
+                if ('fields' in source) { // Es una Query
+                    for (const f of (source as Query).fields) {
+                        if (f.name === nameToFind || f.alias === nameToFind) {
+                            foundId = f.id;
+                            foundOrigin.push(source.id, ...f.origin);
+                            break; 
+                        }
                     }
-                });
-            });
+                } else { // Es una Reference o Join
+                    foundOrigin.push(source.id);
+                }
+                if(foundId) break;
+            }
+        }
+        return { foundId, foundOrigin };
+    };
+
+    if (valueNode?.type === 'invocation') {
+        const invocationArgs = valueNode.descendantsOfType('term');
+        invocationArgs.forEach(arg => {
+            if (arg) {
+                const argField = processField(arg, references, joins, queryChildren);
+                origin.push(...argField.origin);
+            }
+        });
+
+    } else if (valueNode?.type !== 'subquery') {
+        if (originAlias && fieldName) {
+            const { foundId, foundOrigin } = findOrigin(originAlias, fieldName);
+            id = foundId;
+            origin.push(...foundOrigin);
+        } else {
+            // Lógica mejorada para campos sin alias de tabla
+            const allPossibleSources = [...queryChildren, ...references, ...joins];
+            // Primero, busca en los CTEs/subconsultas
+            for (const source of queryChildren) {
+                const foundField = source.fields.find(f => f.name === name || f.alias === name);
+                if (foundField) {
+                    id = foundField.id;
+                    origin.push(source.id, ...foundField.origin);
+                    break;
+                }
+            }
+
+            // Si no se encontró y solo hay una tabla de referencia, asume que viene de ahí
+            if (origin.length === 0 && references.length === 1) {
+                origin.push(references[0].id);
+            }
         }
     }
+    
+    origin = [...new Set(origin)];
 
     return {
         id: id ?? murmur.murmur3(field + Math.random() * 1000),
         name,
         text,
-        alias: alias ?? text,
+        alias: alias ?? name,
         isAllSelector: isSelectAll,
         origin,
     };
 }
-
 function concatChildrenFields(node: Query, fields: Field[]): Field[] {
     return fields.concat(
         node.fields

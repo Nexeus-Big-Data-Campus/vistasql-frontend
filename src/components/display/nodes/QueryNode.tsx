@@ -37,8 +37,12 @@ export default function QueryNode({ data, resetHighlight }: Props) {
     const highlightEdges = (field: Field) => {
         setEdges((prevEdges) => {
             const updated = prevEdges.map((e) => {
-                const isOriginEdge = field.origin.reduce((acum, origin) => {
-                    return acum || e.id.startsWith(`${origin}`);
+                // Lógica de comparación corregida
+                const isOriginEdge = field.origin.reduce((acum, originId) => {
+                    // Un nodo raíz tiene un ID simple, un nodo anidado termina con "-ID"
+                    // Comprobamos si el origen del eje (e.source) es el ID del origen,
+                    // o si termina con "-"+ID del origen.
+                    return acum || e.source === originId || e.source.endsWith(`-${originId}`);
                 }, false);
 
                 if (!isOriginEdge) {
@@ -70,15 +74,15 @@ export default function QueryNode({ data, resetHighlight }: Props) {
             </header>
             <section className='text-sm bg-white'>
                 {fields.map((field, index) => (
-                    <div 
-                        data-fieldid={field.id} 
-                        key={`${field.id}-${field.name}`} 
-                        className="text-xs p-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100"
-                        onClick={(event) => onFieldClick(event, field, index)}
-                    >
-                        {field.name}
-                    </div>
-                ))}
+                <div 
+                    data-fieldid={field.id} 
+                    key={`${field.id}-${field.name}`} 
+                    className="text-xs p-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100"
+                    onClick={(event) => onFieldClick(event, field, index)}
+                >
+                    {field.text} {/* <-- Cambiar field.name por field.text */}
+                </div>
+            ))}
             </section>
         </div>
     );

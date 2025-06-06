@@ -5,4 +5,5 @@ export interface Field {
     alias: string;
     origin: string[];
     isAllSelector: boolean;
+    
 }
