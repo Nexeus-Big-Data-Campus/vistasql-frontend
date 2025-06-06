@@ -72,7 +72,8 @@ const flattenQueryTree = (node: Query, allCteQueries: Query[], parentHash?: stri
 
     
     const newReferences = node.fromClause.references.filter((ref) => {
-        return !allCteQueries.some(cte => cte.name === ref.name || cte.alias === ref.name);
+
+        return !allCteQueries.some(cte => cte.name === ref.name);
     });
 
     newReferences.forEach((reference) => {
