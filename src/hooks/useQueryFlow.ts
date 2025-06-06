@@ -5,7 +5,6 @@ import { Query, TableReference } from '../interfaces/query';
 import { Join } from '../interfaces/join';
 import { Field, FieldOrigin, FieldReference } from '../interfaces/field';
 
-//TODO: MOVE TO INTERFACE FILE
 export interface FlowNode {
     id: string;
     type: string;
@@ -31,10 +30,10 @@ const getNodeSize = (node: FlowNode): { width: number; height: number } => {
     }
 };
 
-const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
+const flattenQueryTree = (node: Query, allCteQueries: Query[], parentHash?: string): FlowNode[] => {
     const treeNodes: FlowNode[] = [];
 
-    // Add root node
+    
     treeNodes.push({
         id: `${node.id}`,
         type: 'query',
@@ -44,8 +43,9 @@ const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
         edgelLabel: node.alias ?? undefined
     });
 
+    
     node.cte.forEach((child) => {
-        treeNodes.push(...flattenQueryTree(child, `${node.id}`));
+        treeNodes.push(...flattenQueryTree(child, allCteQueries, `${node.id}`));
     });
 
     node.joins.forEach((join) => {
@@ -70,8 +70,9 @@ const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
         });
     });
 
+    
     const newReferences = node.fromClause.references.filter((ref) => {
-        return !node.cte.reduce((acum, child) => acum || child.name === ref.name, false);
+        return !allCteQueries.some(cte => cte.name === ref.name || cte.alias === ref.name);
     });
 
     newReferences.forEach((reference) => {
@@ -127,17 +128,16 @@ const buildLayout = (flowNodes: FlowNode[], edges: any[]): FlowNode[] => {
 };
 
 export const useQueryFlow = (queryTree: Query[]) => {
-    
+
     const getAllEdgesFromTree = (nodes: FlowNode[]) => {
         return nodes.reduce((acc: any[], node) => {
-            // Eugh: ugly
             const data = node.data as any;
             const fields = 'selectClause' in data ? data.selectClause?.fields : [];
             const joins = 'joins' in data ? data.joins : [];
 
             fields.forEach((field: Field) => {
                 const fieldId = field.id;
-                field.references.forEach((ref: FieldReference, i: number) => {
+                field.references.forEach((ref: FieldReference) => {
                     const sourceHandle = ref.origin !== FieldOrigin.CTE ? 'source' : `${ref.fieldId}-source`;
                     const edge = {
                         id: `${ref.fieldId}-${fieldId}`,
@@ -170,7 +170,24 @@ export const useQueryFlow = (queryTree: Query[]) => {
             return [[], []];
         }
 
-        const allNodes = queryTree.map((node) => flattenQueryTree(node)).flat();
+        
+        const getAllCtes = (queries: Query[]): Query[] => {
+            let all: Query[] = [];
+            queries.forEach(q => {
+                
+                if (q.type === 'cte') {
+                    all.push(q);
+                }
+                if (q.cte && q.cte.length > 0) {
+                    all = [...all, ...getAllCtes(q.cte)];
+                }
+            });
+            return all;
+        }
+        const allCteQueries = getAllCtes(queryTree);
+
+        
+        const allNodes = queryTree.map((node) => flattenQueryTree(node, allCteQueries)).flat();
         const allEdges = getAllEdgesFromTree(allNodes);
         const graphNodes = buildLayout(allNodes, allEdges);
 
