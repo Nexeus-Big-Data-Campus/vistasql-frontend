@@ -1,15 +1,12 @@
 type LoginResponse = {
-  token: string;
-  user: {
-    id: number;
-    username: string;
-    email: string;
-  };
+  access_token: string;
+  token_type: string;
 };
+
 export class ApiService {
   private API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-  private getAuthHeaders(): Record<string, string> {
+  private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -22,12 +19,22 @@ export class ApiService {
     return headers;
   }
 
-  private async makeRequest<T>(endpoint: string, method: string, body?: any, requireAuth: boolean = false): Promise<T> {
-    const headers = requireAuth ? this.getAuthHeaders() : { "Content-Type": "application/json" };
+  async login(email: string, password: string):  Promise<LoginResponse> {
+    return await this.makeRequest("/login", "POST", { email, password });
+  }
 
+  async signin(name: string, email: string, password: string): Promise<LoginResponse> {
+    return await this.makeRequest("/signin", "POST", { name, email, password });
+  }
+
+  async getUserProfile() {
+    return await this.makeRequest("/profile", "GET");
+  }
+  
+  private async makeRequest(endpoint: string, method: string, body?: any) {
     const response = await fetch(`${this.API_URL}${endpoint}`, {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers: this.getHeaders(),
       body: JSON.stringify(body),
     });
 
@@ -38,18 +45,6 @@ export class ApiService {
     }
 
     return await response.json();
-  }
-
-  async login(email: string, password: string):  Promise<LoginResponse> {
-    return await this.makeRequest("/login", "POST", { email, password });
-  }
-
-  async signin(name: string, email: string, password: string) {
-    return await this.makeRequest("/signin", "POST", { name, email, password });
-  }
-
-  async getUserProfile() {
-    return await this.makeRequest<any>("/profile", "GET", undefined, true); // requiere auth
   }
 }
 

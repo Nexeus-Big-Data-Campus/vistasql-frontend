@@ -1,71 +1,68 @@
 import { useContext, useState } from "react";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
-import { TextField, Button,Typography, Alert, CircularProgress,Paper } from "@mui/material";
+import { TextField, Button, Typography, Alert, CircularProgress, Paper } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { ApiService } from "../services/ApiService";
-import ErrorIcon from "@mui/icons-material/Error";
 import { Link, useNavigate } from 'react-router';
 import { UserContext } from "../contexts/UserContext";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useContext(UserContext);
   
   const { t } = useTranslation();
+  const navigate = useNavigate(); 
+  const { login } = useContext(UserContext);
   const apiService = new ApiService();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setMessage("");
 
-    const data = await apiService.login(email, password);
+    const data = await apiService.signin("", email, password);
     const token = data.access_token;
 
     if (!token) {
       setMessage(t("Credenciales inválidas"));
-    };
+    }
 
     login(token);
     navigate('/editor');
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column' }}>      
+    <Box sx={{ display: 'flex', flexDirection: 'column', flexBasis: 1 }}>
       <Box
         sx={{
           flexGrow: 1,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center", 
+          justifyContent: "center",
           py: { xs: 3, sm: 6 } 
         }}
       >
         <Container component="main" maxWidth="sm">
           <Paper
-            elevation={6}
+            elevation={2}
             sx={{
               p: { xs: 2, sm: 4 }, 
-              borderRadius: 3, 
-              maxWidth: 400, 
-              width: "100%", 
+              borderRadius: 3,
+              maxWidth: 400,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              boxShadow: "0 8px 32px rgba(25, 118, 210, 0.15)", 
             }}
           >
             <Typography variant="h4" component="h1" gutterBottom color="primary">
-              {t('loginForm.title')}
+              {t('registerForm.title')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {t('loginForm.subtitle')}
+              {t('registerForm.subtitle')}
             </Typography>
             <Box
               component="form"
@@ -93,7 +90,7 @@ export default function LoginPage() {
                 variant="outlined"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
+                autoComplete="new-password"
                 required
                 fullWidth
               />
@@ -106,27 +103,21 @@ export default function LoginPage() {
                 disabled={isLoading}
                 sx={{ mt: 1, fontWeight: "bold", letterSpacing: 1 }}
               >
-                {isLoading ? <CircularProgress size={24} color="inherit" /> : t('loginForm.submitButton')}
+                {isLoading ? <CircularProgress size={24} color="inherit" /> : t('registerForm.submitButton')}
               </Button>
             </Box>
             {message && (
               <Alert
                 severity="error"
-                sx={{ width: "100%", mt: 2, display: "flex", alignItems: "center" }}
-                icon={<ErrorIcon fontSize="inherit" />}
+                sx={{ width: "100%", mt: 2 }}
               >
                 {message}
               </Alert>
             )}
-            <Link to="/signin">
-              <Button
-              variant="text"
-              color="secondary"
-              sx={{ mt: 2, textTransform: "none" }}
-              fullWidth
-            >
-              {t('loginForm.createAccountButton')}
-            </Button>
+            <Link to="/login">
+              <Button variant="text" color="secondary" sx={{ mt: 2, textTransform: "none" }} fullWidth>
+                {t('registerForm.loginButton')}
+              </Button>
             </Link>
           </Paper>
         </Container>

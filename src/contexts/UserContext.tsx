@@ -1,3 +1,4 @@
+import { jwtDecode } from "jwt-decode";
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 
 interface User {
@@ -9,7 +10,7 @@ interface User {
 interface UserContextType {
   user: User | null;
   token: string | null;
-  login: (token: string, user: User) => void;
+  login: (token: string) => void;
   logout: () => void;
 }
 
@@ -39,8 +40,9 @@ export function UserProvider({ children }: Props) {
     }
   }, []);
 
-  const login = (token: string, user: User) => {
+  const login = (token: string) => {
     setToken(token);
+    const user = jwtDecode(token) as User;
     setUser(user);
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
@@ -51,7 +53,6 @@ export function UserProvider({ children }: Props) {
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    // Nada de navegación aquí
   };
 
   return (

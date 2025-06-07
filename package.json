@@ -11,15 +11,19 @@
     "@mui/material": "^7.1.0",
     "@tailwindcss/postcss": "^4.1.5",
     "@xyflow/react": "^12.5.4",
+    "jwt-decode": "^4.0.0",
     "murmurhash-js": "^1.0.0",
     "prismjs": "^1.30.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-i18next": "^15.5.2",
     "react-router": "^7.5.3",
     "react-simple-code-editor": "^0.14.1",
     "tree-sitter-sql": "^0.1.0",
     "web-tree-sitter": "^0.25.3",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "i18next": "^25.2.1",
+    "i18next-browser-languagedetector": "^8.1.0"
   },
   "scripts": {
     "start": "vite",
@@ -47,6 +51,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^29.5.14",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
     "@typescript-eslint/eslint-plugin": "^8.29.0",

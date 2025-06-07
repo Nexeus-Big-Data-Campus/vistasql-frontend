@@ -5,6 +5,8 @@ import MainEditor from './pages/MainEditor';
 import LoginPage from './pages/LoginPage';
 import AppLayout from './pages/layouts/AppLayout';
 import '@fontsource/roboto';
+import React from 'react';
+import RegisterPage from './pages/RegisterPage';
 
 const router = createBrowserRouter([
   {
@@ -14,12 +16,18 @@ const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: 'editor', element: <MainEditor /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'signin', element: <RegisterPage /> },
+      { path: 'profile', element: <>TODO</>}
     ],
   },
 ]);
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <React.StrictMode>
+      <RouterProvider router={router} />
+    </React.StrictMode>
+  );
 }
 
 export default App;
