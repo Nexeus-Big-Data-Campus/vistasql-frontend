@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AppBar, Toolbar, Button, Card, CardContent, Divider, FormControlLabel, Typography, List, ListItem, ListItemText, Rating, Switch,} from "@mui/material";
 import PaginationControls from "../../components/PaginationControls";
 
@@ -25,14 +25,20 @@ if (!localStorage.getItem("feedbacks")) {
   localStorage.setItem("feedbacks", JSON.stringify(allFeedbacks));
 }
 
-export default function FeedbackSection() {
-  const [feedbacks, setFeedbacks] = useState<Feedback[]>(
-    JSON.parse(localStorage.getItem("feedbacks") || "[]")
-  );
+interface FeedbackSectionProps {
+  usersFeedback: Feedback[];
+}
+
+export default function FeedbackSection({ usersFeedback }: FeedbackSectionProps) {
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>(usersFeedback && usersFeedback.length > 0 ? usersFeedback : allFeedbacks);
   const [page, setPage] = useState(1);
   const [showHidden, setShowHidden] = useState(false);
 
-  // Filtta los comentarios
+  useEffect(() => {
+    setFeedbacks(usersFeedback && usersFeedback.length > 0 ? usersFeedback : allFeedbacks);
+  }, [usersFeedback]);
+    
+  // Filtra los comentarios
   const visibleFeedbacks = showHidden
     ? feedbacks
     : feedbacks.filter((fb) => !fb.hidden);

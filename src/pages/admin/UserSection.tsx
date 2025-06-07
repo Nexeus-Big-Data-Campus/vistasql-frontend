@@ -1,28 +1,5 @@
 import { useEffect, useState } from "react";
-import { AppBar,
-  Toolbar,
-  Button,
-  Card,
-  CardContent,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  MenuItem,
-  Stack,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Select,
-  SelectChangeEvent,
-  Box,
-  FormControl,
-  InputLabel,
-} from "@mui/material";
+import { AppBar, Toolbar, Button, Card, CardContent, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, Typography, Table, TableBody, TableCell, TableHead, TableRow, TextField, Select, SelectChangeEvent, Box, FormControl, InputLabel,} from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PaginationControls from "../../components/PaginationControls";
@@ -37,8 +14,12 @@ interface Usertype {
   role: string;
 }
 
-export default function UsersSection() {
-  const [users, setUsers] = useState<Usertype[]>([]);
+interface UsersSectionProps {
+  usersData: Usertype[];
+}
+
+export default function UsersSection({ usersData }: UsersSectionProps) {
+  const [users, setUsers] = useState<Usertype[]>(usersData);
   const [page, setPage] = useState(1);
 
   // Inicialización de usuarios

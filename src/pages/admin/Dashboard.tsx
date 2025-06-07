@@ -1,5 +1,5 @@
 import React from "react";
-import { AppBar, Toolbar, Typography, Grid, Card, CardContent, Box } from "@mui/material";
+import { AppBar, Toolbar, Typography, Card, CardContent, Box, Grid, } from "@mui/material";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 
 type Props = {
@@ -34,7 +34,7 @@ const Dashboard: React.FC<Props> = ({ userStats, averageSessionDuration, registr
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} md={3.5}>
+      <Grid item xs={12} md={3}>
         <Card>
           <CardContent>
             <Typography variant="subtitle1">Avg session duration</Typography>
