@@ -42,22 +42,6 @@ export default function Header() {
                 >
                     {t('header.appName')}
                 </Typography>                
-                {user ? (                    
-                    <IconButton
-                        color="inherit"                        
-                        onClick={() => navigate('/profile')} 
-                        aria-label="account of current user"
-                        aria-controls="menu-appbar"
-                        aria-haspopup="true"
-                    >
-                        <AccountCircle />
-                    </IconButton>
-                ) : (                    
-                    <>
-                        <Button color="inherit" onClick={() => navigate('/login')}>{t('header.login')}</Button>
-                        <Button color="inherit" onClick={() => navigate('/signin')}>{t('header.signUp')}</Button>
-                    </>
-                )}
                 <IconButton
                     color="inherit"
                     onClick={handleLanguageMenuOpen}
@@ -81,6 +65,22 @@ export default function Header() {
                 >
                     {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
                 </IconButton>
+                {user ? (                    
+                    <IconButton
+                        color="inherit"                        
+                        onClick={() => navigate('/profile')} 
+                        aria-label="account of current user"
+                        aria-controls="menu-appbar"
+                        aria-haspopup="true"
+                    >
+                        <AccountCircle />
+                    </IconButton>
+                ) : (                    
+                    <>
+                        <Button color="inherit" onClick={() => navigate('/login')}>{t('header.login')}</Button>
+                        <Button color="inherit" onClick={() => navigate('/signin')}>{t('header.signUp')}</Button>
+                    </>
+                )}
             </Toolbar>
         </AppBar>
     );
