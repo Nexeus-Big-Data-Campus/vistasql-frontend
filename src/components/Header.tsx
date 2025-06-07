@@ -1,21 +1,20 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { AccountCircle, Translate as TranslateIcon, Brightness4 as Brightness4Icon, Brightness7 as Brightness7Icon } from "@mui/icons-material";
 import { Button, Typography, IconButton, Menu, MenuItem } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import { useTranslation } from "react-i18next";
 import { useAppTheme } from "../theme/ThemeContext";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router"; 
+import { UserContext } from "../contexts/UserContext";
 
-interface HeaderProps {    
-    isAuthenticated?: boolean;
-}
 
-export default function Header({ isAuthenticated }: HeaderProps) {
+export default function Header() {
     const { t, i18n } = useTranslation();
     const [anchorElLang, setAnchorElLang] = useState<null | HTMLElement>(null);
     const { mode, toggleTheme } = useAppTheme();
     const navigate = useNavigate(); 
+    const { user } = useContext(UserContext);
 
     const changeLanguage = (lng: string) => {
         i18n.changeLanguage(lng);
@@ -43,7 +42,7 @@ export default function Header({ isAuthenticated }: HeaderProps) {
                 >
                     {t('header.appName')}
                 </Typography>                
-                {isAuthenticated ? (                    
+                {user ? (                    
                     <IconButton
                         color="inherit"                        
                         onClick={() => navigate('/profile')} 
@@ -56,7 +55,7 @@ export default function Header({ isAuthenticated }: HeaderProps) {
                 ) : (                    
                     <>
                         <Button color="inherit" onClick={() => navigate('/login')}>{t('header.login')}</Button>
-                        <Button color="inherit" onClick={() => navigate('/register')}>{t('header.signUp')}</Button>
+                        <Button color="inherit" onClick={() => navigate('/signin')}>{t('header.signUp')}</Button>
                     </>
                 )}
                 <IconButton

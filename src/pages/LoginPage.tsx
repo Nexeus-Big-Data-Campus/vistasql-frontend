@@ -1,65 +1,42 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
-import {
-    TextField,
-    Button,
-    Typography,
-    Alert,
-    CircularProgress,
-    Paper,
-} from "@mui/material";
+import { TextField, Button,Typography, Alert, CircularProgress,Paper } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../context/AuthContext";
-import { useNavigation } from "../context/NavigationContext";
 import { ApiService } from "../services/ApiService";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
+import { Link, useNavigate } from 'react-router';
+import { UserContext } from "../contexts/UserContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [loginStatus, setLoginStatus] = useState<"success" | "error" | null>(null);
+  const { login } = useContext(UserContext);
+  
   const { t } = useTranslation();
-  const { login } = useAuth();
-  const { navigateTo } = useNavigation();
   const apiService = new ApiService();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setMessage("");
-    setLoginStatus(null);
 
-    try {
-      const response = await apiService.login(email, password);
-      const data = await response.json();
+    const data = await apiService.login(email, password);
+    const token = data.access_token;
 
-      if (response.ok) {
-        setMessage(data.message || t('loginForm.successMessage'));
-        setLoginStatus("success");
-        login();
-      } else {
-        setMessage(data.detail || t('loginForm.errorMessage'));
-        setLoginStatus("error");
-      }
-    } catch (error: any) {
-      setMessage(t('loginForm.connectionErrorMessage'));
-      setLoginStatus("error");
-      console.error("Login error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    if (!token) {
+      setMessage(t("Credenciales inválidas"));
+    };
 
-  const handleGoRegister = () => {
-    navigateTo("/register");
+    login(token);
+    navigate('/editor');
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>      
+    <Box sx={{ display: 'flex', flexDirection: 'column' }}>      
       <Box
         sx={{
           flexGrow: 1,
@@ -132,30 +109,25 @@ export default function LoginPage() {
                 {isLoading ? <CircularProgress size={24} color="inherit" /> : t('loginForm.submitButton')}
               </Button>
             </Box>
-            {message && loginStatus && (
+            {message && (
               <Alert
-                severity={loginStatus}
+                severity="error"
                 sx={{ width: "100%", mt: 2, display: "flex", alignItems: "center" }}
-                icon={
-                  loginStatus === "success" ? (
-                    <CheckCircleIcon fontSize="inherit" />
-                  ) : (
-                    <ErrorIcon fontSize="inherit" />
-                  )
-                }
+                icon={<ErrorIcon fontSize="inherit" />}
               >
                 {message}
               </Alert>
             )}
-            <Button
+            <Link to="/signin">
+              <Button
               variant="text"
               color="secondary"
-              onClick={handleGoRegister}
               sx={{ mt: 2, textTransform: "none" }}
               fullWidth
             >
               {t('loginForm.createAccountButton')}
             </Button>
+            </Link>
           </Paper>
         </Container>
       </Box>

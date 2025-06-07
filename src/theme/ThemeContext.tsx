@@ -7,7 +7,6 @@ const getDesignTokens = (mode: PaletteMode) => ({
     mode,
     ...(mode === 'light'
       ? {
-          
           primary: {
             main: '#1976d2', 
           },
@@ -33,7 +32,6 @@ const getDesignTokens = (mode: PaletteMode) => ({
           },
         }),
   },
-  
 });
 
 interface AppThemeContextType {

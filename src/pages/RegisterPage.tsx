@@ -1,61 +1,41 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
-import {
-    TextField,
-    Button,
-    Typography,
-    Alert,
-    CircularProgress,
-    Paper,
-} from "@mui/material";
+import { TextField, Button, Typography, Alert, CircularProgress, Paper } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useNavigation } from "../context/NavigationContext";
 import { ApiService } from "../services/ApiService";
+import { Link, useNavigate } from 'react-router';
+import { UserContext } from "../contexts/UserContext";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [registerStatus, setRegisterStatus] = useState<"success" | "error" | null>(null);
+  
   const { t } = useTranslation();
-  const { navigateTo } = useNavigation();
+  const navigate = useNavigate(); 
+  const { login } = useContext(UserContext);
   const apiService = new ApiService();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setMessage("");
-    setRegisterStatus(null);
 
-    try {
-      const response = await apiService.register(email, password);
-      const data = await response.json();
+    const data = await apiService.signin("", email, password);
+    const token = data.access_token;
 
-      if (response.ok) {
-        setMessage(data.message || t('registerForm.successMessage'));
-        setRegisterStatus("success");
-        navigateTo('/login');
-      } else {
-        setMessage(data.detail || t('registerForm.errorMessage'));
-        setRegisterStatus("error");
-      }
-    } catch (error: any) {
-      setMessage(t('registerForm.connectionErrorMessage'));
-      setRegisterStatus("error");
-      console.error("Register error:", error);
-    } finally {
-      setIsLoading(false);
+    if (!token) {
+      setMessage(t("Credenciales inválidas"));
     }
-  };
 
-  const handleGoLogin = () => {
-    navigateTo("/login");
+    login(token);
+    navigate('/editor');
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', flexBasis: 1 }}>
       <Box
         sx={{
           flexGrow: 1,
@@ -68,16 +48,14 @@ export default function RegisterPage() {
       >
         <Container component="main" maxWidth="sm">
           <Paper
-            elevation={6}
+            elevation={2}
             sx={{
               p: { xs: 2, sm: 4 }, 
-              borderRadius: 3, 
-              maxWidth: 400, 
-              width: "100%", 
+              borderRadius: 3,
+              maxWidth: 400,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              boxShadow: "0 8px 32px rgba(25, 118, 210, 0.15)", 
             }}
           >
             <Typography variant="h4" component="h1" gutterBottom color="primary">
@@ -128,23 +106,19 @@ export default function RegisterPage() {
                 {isLoading ? <CircularProgress size={24} color="inherit" /> : t('registerForm.submitButton')}
               </Button>
             </Box>
-            {message && registerStatus && (
+            {message && (
               <Alert
-                severity={registerStatus}
+                severity="error"
                 sx={{ width: "100%", mt: 2 }}
               >
                 {message}
               </Alert>
             )}
-            <Button
-              variant="text"
-              color="secondary"
-              onClick={handleGoLogin}
-              sx={{ mt: 2, textTransform: "none" }}
-              fullWidth
-            >
-              {t('registerForm.loginButton')}
-            </Button>
+            <Link to="/login">
+              <Button variant="text" color="secondary" sx={{ mt: 2, textTransform: "none" }} fullWidth>
+                {t('registerForm.loginButton')}
+              </Button>
+            </Link>
           </Paper>
         </Container>
       </Box>
