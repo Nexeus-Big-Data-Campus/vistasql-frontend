@@ -5,7 +5,7 @@ import { LexicalError } from "../../interfaces/error";
 import { Field, FieldOrigin } from "../../interfaces/field";
 import { getDirectChildByType, getNodeTypesInCurrentScope } from "./utils";
 import { processColumn } from "./fieldParser";
-import { FromClause, Query, SelectClause, TableReference } from "../../interfaces/query";
+import { FromClause, Query, SelectClause, TableReference, WhereClause } from "../../interfaces/query";
 
 let parser: Parser;
 
@@ -54,16 +54,12 @@ export default function parseQuery(code: string): Query[] {
 
 function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | null = null, parentCtes: Query[] = []): any {
     const localCteAstNodes = rootNode.descendantsOfType('cte');
-
     const processedLocalCtes = processCte(localCteAstNodes, parentCtes);
-
-
     const fullCteContext = [...parentCtes, ...processedLocalCtes];
-
     const joins = getJoins(rootNode);
-    
     const fromClause = parseFromClause(rootNode, fullCteContext);
     const selectClause = parseSelectClause(rootNode, fullCteContext, fromClause.references, joins);
+    const whereClause = parseWhereClause(rootNode);
     const errors = getQueryErrors(rootNode);
 
     return {
@@ -71,11 +67,11 @@ function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | nul
         code: rootNode.text,
         name: name ?? rootNode.type,
         type: type,
-        cte: processedLocalCtes, 
+        cte: processedLocalCtes,
         joins,
         fromClause: fromClause,
         selectClause: selectClause,
-        whereClause: null,
+        whereClause: whereClause,
         orderByClause: null,
         errors
     };
@@ -83,12 +79,24 @@ function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | nul
 
 function parseFromClause(rootNode: Node, cte: Query[]): FromClause {
     const formClause = getNodeTypesInCurrentScope(rootNode, 'from');
-    
+
     if (!formClause || formClause.length === 0) {
         return { references: [] };
     }
     return {
         references: getFromReferences(formClause[0], cte)
+    };
+}
+
+function parseWhereClause(rootNode: Node): WhereClause | null {
+    const whereNode = getNodeTypesInCurrentScope(rootNode, 'where_clause');
+
+    if (!whereNode || whereNode.length === 0) {
+        return null;
+    }
+
+    return {
+        code: whereNode[0].text,
     };
 }
 
@@ -112,7 +120,7 @@ function parseSelectClause(rootNode: Node, cte: Query[], tableReferences: TableR
 
 function getFromReferences(node: Node, cte: Query[]): TableReference[] {
     if (!node || node.type !== 'from') {
-        return []; 
+        return [];
     }
 
     const relations = getDirectChildByType(node, 'relation');
@@ -134,7 +142,7 @@ function getFromReferences(node: Node, cte: Query[]): TableReference[] {
 
         const id = murmur.murmur3(`${alias}-${name}` + Math.random() * 1000);
 
-        
+
         if (name && cte) {
             cte.forEach((element: Query) => {
                 if (element.name === name) {
@@ -180,7 +188,7 @@ function processCte(cteAstNodes: (Node | null)[], parentCtes: Query[] = []): Que
             return;
         }
 
-        
+
         const contextForCurrentCte = [...parentCtes, ...newlyProcessedCtes];
         const newCteQuery = buildQueryNodeFromTree(statement[0], 'cte', name, contextForCurrentCte);
         newlyProcessedCtes.push(newCteQuery);
@@ -241,7 +249,7 @@ function getSelectFields(selectExpression: Node | null, references: TableReferen
     const hasAllSelector = fields.reduce((acum, field) => acum || field.isAllSelector, false);
 
     if (hasAllSelector) {
-        
+
         references.forEach((reference) => {
             const referenceChild = cte.filter((query) => query.name === reference.name);
             referenceChild.forEach((c: Query) => {

@@ -1,5 +1,5 @@
 import { Handle, Position, useReactFlow } from '@xyflow/react';
-import React, { useState } from 'react';
+import React from 'react';
 import { Query } from '../../../interfaces/query';
 import { Field } from '../../../interfaces/field';
 import { EDGE_AMBIGUOUS_CLASS, EDGE_HIGHLIGHT_CLASS, FIELD_HIGHLIGHT_CLASS } from '../QueryDisplay';
@@ -34,7 +34,7 @@ interface Props {
 }
 
 export default function QueryNode({ data, resetHighlight }: Props) {
-    const { id, name, selectClause, type } = data;
+    const { id, name, selectClause, type, whereClause } = data;
     const { setEdges } = useReactFlow();
 
     const onFieldClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, field: Field, index: number) => {
@@ -53,7 +53,7 @@ export default function QueryNode({ data, resetHighlight }: Props) {
     const highlightEdges = (field: Field) => {
         setEdges((prevEdges) => {
             const updated = prevEdges.map((e) => {
-                const isFieldEdge = e.id.includes(field.id) || (field.references?.parentId && e.id.endsWith(field.references?.parentId));
+                const isFieldEdge = e.id.includes(field.id);
 
                 if (!isFieldEdge) {
                     return {
@@ -96,6 +96,12 @@ export default function QueryNode({ data, resetHighlight }: Props) {
                     </div>
                 ))}
             </section>
+            {whereClause && (
+                <footer className="bg-gray-200 p-2 text-xs border-t border-gray-300">
+                    <span className="font-bold">WHERE:</span>
+                    <p className="whitespace-pre-wrap font-mono">{whereClause.code.replace('WHERE ', '')}</p>
+                </footer>
+            )}
         </div>
     );
 }
