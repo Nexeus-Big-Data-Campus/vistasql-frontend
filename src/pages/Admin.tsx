@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { ListItemButton, Grid, Divider, Button, Box, Drawer, List, ListItem, ListItemText, AppBar, Toolbar, Typography, Card, CardContent } from "@mui/material";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
+import Dashboard from "./admin/Dashboard";
+import FeedbackSection from "./admin/FeedbackSection";
+import UsersSection from "./admin/UserSection";
+
 
 const drawerWidth = 200;
 
@@ -47,87 +51,27 @@ const DashboardAdmin: React.FC = () => {
   }, []);
 
 const renderMainContent = () => {
-    if (selectedIndex === 0) {
-      // Dashboard
-      return (
-        <>
-          <AppBar position="static" sx={{ bgcolor: "#d3d3d3", boxShadow: "none", mb: 2 }}>
-            <Toolbar>
-              <Typography variant="subtitle1" component="div">
-                DASHBOARD
-              </Typography>
-            </Toolbar>
-          </AppBar>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Card>
-                <CardContent>
-                  <Typography variant="subtitle1">Total users</Typography>
-                  <Typography variant="h3">{userStats?.total_users ?? "-"}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Card>
-                <CardContent>
-                  <Typography variant="subtitle1">Last month</Typography>
-                  <Typography variant="h3">{userStats?.last_month ?? "-"}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid size={{ xs: 12, md: 3.5 }}>
-              <Card>
-                <CardContent>
-                  <Typography variant="subtitle1">Avg session duration</Typography>
-                  <Typography variant="h3">{averageSessionDuration ?? "00:00:00"}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-          <Box mt={4}>
-            <Typography variant="subtitle1" gutterBottom>
-              User registrations
-            </Typography>
-            <Card>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={registrationData}>
-                    <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="count" stroke="#8884d8" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </Box>
-        </>
-      );
-    } else if (selectedIndex === 1) {
-      // Users
-      return (
-        <AppBar position="static" sx={{ bgcolor: "#d3d3d3", boxShadow: "none", mb: 2 }}>
-          <Toolbar>
-            <Typography variant="subtitle1" component="div">
-              USERS
-            </Typography>
-          </Toolbar>
-        </AppBar>
-      );
-    } else if (selectedIndex === 2) {
-      // Feedback
-      return (
-        <AppBar position="static" sx={{ bgcolor: "#d3d3d3", boxShadow: "none", mb: 2 }}>
-          <Toolbar>
-            <Typography variant="subtitle1" component="div">
-              FEEDBACK
-            </Typography>
-          </Toolbar>
-        </AppBar>
-      );
-    }
-  };
+  if (selectedIndex === 0) {
+    // Dashboard
+    return (
+      <Dashboard
+        userStats={userStats}
+        averageSessionDuration={averageSessionDuration}
+        registrationData={registrationData}
+      />
+    );
+  } else if (selectedIndex === 1) {
+    // Users
+    return (
+      <UsersSection usersData={usersData} />
+    );
+  } else if (selectedIndex === 2) {
+    // Feedback
+    return (
+      <FeedbackSection usersFeedback={usersFeedback} />
+    );
+  }
+};
 
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
