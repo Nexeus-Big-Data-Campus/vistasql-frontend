@@ -60,6 +60,7 @@ function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | nul
     const fromClause = parseFromClause(rootNode, fullCteContext);
     const selectClause = parseSelectClause(rootNode, fullCteContext, fromClause.references, joins);
     const whereClause = parseWhereClause(rootNode);
+    console.log('WHERE CLAUSE:', whereClause);
     const errors = getQueryErrors(rootNode);
 
     return {
@@ -95,8 +96,12 @@ function parseWhereClause(rootNode: Node): WhereClause | null {
         return null;
     }
 
+    // Extrae el texto completo de la cláusula y elimina la palabra "WHERE" de forma insensible a mayúsculas/minúsculas
+    const rawText = whereNode[0].text;
+    const conditionText = rawText.replace(/^WHERE\s+/i, '');
+
     return {
-        code: whereNode[0].text,
+        code: conditionText,
     };
 }
 

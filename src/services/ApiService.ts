@@ -1,5 +1,12 @@
+declare global {
+  interface ImportMeta {
+    env: {
+      [key: string]: any;
+    };
+  }
+}
 
-
+// @ts-ignore
 export class ApiService {
   API_URL = import.meta.env.API_URL || "http://localhost:8000";
 
@@ -20,5 +27,10 @@ export class ApiService {
 
     return response;
   }
+}
+
+export function getDirectChildByType(node: Node, type: string): Node[] {
+    const namedChildren = (node as any).namedChildren as Node[];
+    return namedChildren.filter((child: any) => child != null && child.type === type);
 }
 

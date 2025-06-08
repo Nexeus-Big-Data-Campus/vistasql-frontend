@@ -5,6 +5,7 @@ import { Query } from '../../interfaces/query';
 import QueryNode from './nodes/QueryNode';
 import JoinNode from './nodes/JoinNode';
 import ReferenceNode from './nodes/ReferenceNode';
+import WhereNode from './nodes/WhereNode';
 import { Alert } from '@mui/material';
 import { FlowNode, useQueryFlow } from '../../hooks/useQueryFlow';
 
@@ -26,6 +27,9 @@ function EmptyQueryAlert({queryLength} : {queryLength: number}) {
 
 export default function QueryDisplay({ queryTree }: Props) {
 
+    console.log('QUERYTREE:', queryTree);
+    console.log('QUERYTREE EN MAINEDITOR:', queryTree);
+
     const [flowInstance, setFLowInstance] = useState<ReactFlowInstance<any, any> | undefined>();
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [nodes, setNodes] = useNodesState([]);
@@ -34,12 +38,17 @@ export default function QueryDisplay({ queryTree }: Props) {
     const nodeTypes = useMemo(() => ({
         query: (props: any) => <QueryNode {...props} resetHighlight={resetHighlight}></QueryNode>,
         join: JoinNode,
-        reference: ReferenceNode
+        reference: ReferenceNode,
+        where: WhereNode
     }), []);
 
     useEffect(() => {
         setNodes(memoizedNodes as any);
         setEdges(memoizedEdges as any);
+        flowInstance?.fitView();
+        console.log('NODOS:', memoizedNodes);
+        console.log('EDGES:', memoizedEdges);
+        console.log('NODOS PARSER:', memoizedNodes);
     }, [memoizedNodes, memoizedEdges]);
 
     const onNodesChange = () => {

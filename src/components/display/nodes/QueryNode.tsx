@@ -1,4 +1,4 @@
-import { Handle, Position, useReactFlow } from '@xyflow/react';
+import { Handle, Position, useReactFlow, useStore } from '@xyflow/react';
 import React from 'react';
 import { Query } from '../../../interfaces/query';
 import { Field } from '../../../interfaces/field';
@@ -35,7 +35,7 @@ interface Props {
 
 export default function QueryNode({ data, resetHighlight }: Props) {
     const { id, name, selectClause, type, whereClause } = data;
-    const { setEdges } = useReactFlow();
+    const { setEdges, getEdges } = useReactFlow();
 
     const onFieldClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, field: Field, index: number) => {
         event.stopPropagation();
@@ -83,23 +83,33 @@ export default function QueryNode({ data, resetHighlight }: Props) {
                 <TypeLabel type={type}></TypeLabel>
             </header>
             <section className='text-sm bg-white'>
-                {selectClause.fields.map((field, index) => (
-                    <div data-fieldid={field.id} key={index} tabIndex={index} className="text-xs p-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100 flex justify-between items-center relative overflow-visible"
-                        onClick={(event) => onFieldClick(event, field, index)}>
-                        {field.alias}
+                {selectClause.fields.map((field, index) => {
+                    // Verificar si hay edges conectados a este campo
+                    const edges = getEdges();
+                    const hasTargetEdge = edges.some(e => e.targetHandle === `${field.id}-target`);
+                    const hasSourceEdge = edges.some(e => e.sourceHandle === `${field.id}-source`);
+                    return (
+                        <div data-fieldid={field.id} key={index} tabIndex={index} className="text-xs p-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100 flex justify-between items-center relative overflow-visible"
+                            onClick={(event) => onFieldClick(event, field, index)}>
+                            {field.alias}
 
-                        <Handle type="target" position={Position.Left} id={`${field.id}-target`} />
-                        <Handle type="source" position={Position.Right} id={`${field.id}-source`} />
+                            {hasTargetEdge && (
+                                <Handle type="target" position={Position.Left} id={`${field.id}-target`} />
+                            )}
+                            {hasSourceEdge && (
+                                <Handle type="source" position={Position.Right} id={`${field.id}-source`} />
+                            )}
 
-                        <InvocationFieldLabel field={field}></InvocationFieldLabel>
-                        <InvocationFieldText field={field}></InvocationFieldText>
-                    </div>
-                ))}
+                            <InvocationFieldLabel field={field}></InvocationFieldLabel>
+                            <InvocationFieldText field={field}></InvocationFieldText>
+                        </div>
+                    );
+                })}
             </section>
             {whereClause && (
                 <footer className="bg-gray-200 p-2 text-xs border-t border-gray-300">
                     <span className="font-bold">WHERE:</span>
-                    <p className="whitespace-pre-wrap font-mono">{whereClause.code.replace('WHERE ', '')}</p>
+                    <p className="whitespace-pre-wrap font-mono">{whereClause.code}</p>
                 </footer>
             )}
         </div>

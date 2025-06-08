@@ -8,7 +8,7 @@ import { Field, FieldOrigin, FieldReference } from '../interfaces/field';
 export interface FlowNode {
     id: string;
     type: string;
-    data: Query | Join | TableReference;
+    data: Query | Join | TableReference | { code: string };
     position: XYPosition;
     parent?: string;
     edgelLabel?: string;
@@ -31,9 +31,9 @@ const getNodeSize = (node: FlowNode): { width: number; height: number } => {
 };
 
 const flattenQueryTree = (node: Query, allCteQueries: Query[], parentHash?: string): FlowNode[] => {
-    const treeNodes: FlowNode[] = [];
+    let treeNodes: FlowNode[] = [];
 
-    
+    // Nodo principal
     treeNodes.push({
         id: `${node.id}`,
         type: 'query',
@@ -43,11 +43,23 @@ const flattenQueryTree = (node: Query, allCteQueries: Query[], parentHash?: stri
         edgelLabel: node.alias ?? undefined
     });
 
-    
+    // Nodo WHERE
+    if (node.whereClause) {
+        treeNodes.push({
+            id: `${node.id}-where`,
+            type: 'where',
+            data: { code: node.whereClause.code },
+            parent: undefined,
+            position: { x: 0, y: 0 },
+        });
+    }
+
+    // CTEs
     node.cte.forEach((child) => {
-        treeNodes.push(...flattenQueryTree(child, allCteQueries, `${node.id}`));
+        treeNodes = treeNodes.concat(flattenQueryTree(child, allCteQueries, `${node.id}`));
     });
 
+    // Joins
     node.joins.forEach((join) => {
         const id = `${join.id}`;
         treeNodes.push({
@@ -70,9 +82,8 @@ const flattenQueryTree = (node: Query, allCteQueries: Query[], parentHash?: stri
         });
     });
 
-    
+    // Referencias
     const newReferences = node.fromClause.references.filter((ref) => {
-
         return !allCteQueries.some(cte => cte.name === ref.name);
     });
 
@@ -131,10 +142,24 @@ const buildLayout = (flowNodes: FlowNode[], edges: any[]): FlowNode[] => {
 export const useQueryFlow = (queryTree: Query[]) => {
 
     const getAllEdgesFromTree = (nodes: FlowNode[]) => {
-        return nodes.reduce((acc: any[], node) => {
+        let acc: any[] = [];
+        nodes.forEach((node) => {
             const data = node.data as any;
             const fields = 'selectClause' in data ? data.selectClause?.fields : [];
             const joins = 'joins' in data ? data.joins : [];
+
+            if (node.type === 'where') {
+                const queryNode = nodes.find(n => n.id === node.id.replace('-where', ''));
+                if (queryNode) {
+                    acc.push({
+                        id: `${node.id}-to-${queryNode.id}`,
+                        source: node.id,
+                        target: queryNode.id,
+                        sourceHandle: 'source',
+                        targetHandle: 'target',
+                    });
+                }
+            }
 
             fields.forEach((field: Field) => {
                 const fieldId = field.id;
@@ -161,9 +186,8 @@ export const useQueryFlow = (queryTree: Query[]) => {
                 };
                 acc.push(edge);
             });
-
-            return acc;
-        }, []);
+        });
+        return acc;
     }
 
     const [nodes, edges] = useMemo(() => {
