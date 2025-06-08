@@ -1,31 +1,23 @@
-import { Handle, Position, useReactFlow, useStore } from '@xyflow/react';
+import { Handle, Position, useReactFlow } from '@xyflow/react';
 import React from 'react';
 import { Query } from '../../../interfaces/query';
 import { Field } from '../../../interfaces/field';
 import { EDGE_AMBIGUOUS_CLASS, EDGE_HIGHLIGHT_CLASS, FIELD_HIGHLIGHT_CLASS } from '../QueryDisplay';
 
 function TypeLabel({ type }: { type: string }) {
-    if (type === 'statement') return;
-
-    return (
-        <span className='text-[0.6rem] p-1 bg-gray-200 rounded-2xl ml-6'>{type}</span>
-    );
+    if (type === 'statement') return null;
+    return <span className='text-[0.6rem] p-1 bg-gray-200 rounded-2xl ml-6'>{type}</span>;
 }
 
 function InvocationFieldLabel({ field }: { field: Field }) {
-    if(!('invocationName' in field)) return;
-
+    if (!('invocationName' in field)) return null;
     const invocationName = (field as any).invocationName.toUpperCase();
-
-    return (
-        <span className='text-[0.6rem] px-2 py-[0.1rem] bg-primary text-white rounded-2xl !font-normal ml-4 leading-normal'>{invocationName}</span>
-    );
+    return <span className='text-[0.6rem] px-2 py-[0.1rem] bg-primary text-white rounded-2xl !font-normal ml-4 leading-normal'>{invocationName}</span>;
 }
 
 function InvocationFieldText({ field }: { field: Field }) {
-    if(!('invocationName' in field)) return;
-
-    return <span className='invocation-column-text text-[0.6rem] h-full border-1 ml-[2px] !bg-white !font-normal text-black p-1 absolute top-0 left-[100%] text-nowrap flex items-center'>{field.text}</span>
+    if (!('invocationName' in field)) return null;
+    return <span className='invocation-column-text text-[0.6rem] h-full border-1 ml-[2px] !bg-white !font-normal text-black p-1 absolute top-0 left-[100%] text-nowrap flex items-center'>{field.text}</span>;
 }
 
 interface Props {
@@ -34,10 +26,10 @@ interface Props {
 }
 
 export default function QueryNode({ data, resetHighlight }: Props) {
-    const { id, name, selectClause, type, whereClause } = data;
+    const { name, selectClause, type } = data;
     const { setEdges, getEdges } = useReactFlow();
 
-    const onFieldClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, field: Field, index: number) => {
+    const onFieldClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, field: Field) => {
         event.stopPropagation();
         resetHighlight();
         highlightField(field.id);
@@ -54,64 +46,40 @@ export default function QueryNode({ data, resetHighlight }: Props) {
         setEdges((prevEdges) => {
             const updated = prevEdges.map((e) => {
                 const isFieldEdge = e.id.includes(field.id);
-
-                if (!isFieldEdge) {
-                    return {
-                        ...e,
-                        animated: false,
-                        className: ''
-                    };
-                }
-
-                return {
-                    ...e,
-                    animated: true,
-                    className: field.isAmbiguous ? EDGE_AMBIGUOUS_CLASS : EDGE_HIGHLIGHT_CLASS,
-                };
+                if (!isFieldEdge) return { ...e, animated: false, className: '' };
+                return { ...e, animated: true, className: field.isAmbiguous ? EDGE_AMBIGUOUS_CLASS : EDGE_HIGHLIGHT_CLASS };
             });
-
             return updated;
         });
     }
 
     return (
-        <div className="rounded-t-xs overflow-visible border-1 bg-gray-900">
-            {/* <Handle type="target" position={Position.Left} id={'target'} />
-            <Handle type="source" position={Position.Right} id={'source'} /> */}
-            <header className='py-1 px-2 bg-gray-900 flex items-center justify-between'>
+        <div className="rounded-t-xs overflow-hidden border-1 bg-gray-900 w-full h-full flex flex-col">
+            <Handle type="target" position={Position.Left} id={'target'} />
+            <Handle type="source" position={Position.Right} id={'source'} />
+
+            <header className='py-1 px-2 bg-gray-900 flex items-center justify-between flex-shrink-0'>
                 <span className='text-lg text-white'>{name}</span>
                 <TypeLabel type={type}></TypeLabel>
             </header>
-            <section className='text-sm bg-white'>
-                {selectClause.fields.map((field, index) => {
-                    // Verificar si hay edges conectados a este campo
+
+            <section className='text-sm bg-white flex-grow overflow-y-auto'>
+                {selectClause.fields.map((field) => {
                     const edges = getEdges();
                     const hasTargetEdge = edges.some(e => e.targetHandle === `${field.id}-target`);
                     const hasSourceEdge = edges.some(e => e.sourceHandle === `${field.id}-source`);
                     return (
-                        <div data-fieldid={field.id} key={index} tabIndex={index} className="text-xs p-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100 flex justify-between items-center relative overflow-visible"
-                            onClick={(event) => onFieldClick(event, field, index)}>
+                        <div data-fieldid={field.id} key={field.id} className="text-xs p-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100 flex justify-between items-center relative"
+                            onClick={(event) => onFieldClick(event, field)}>
                             {field.alias}
-
-                            {hasTargetEdge && (
-                                <Handle type="target" position={Position.Left} id={`${field.id}-target`} />
-                            )}
-                            {hasSourceEdge && (
-                                <Handle type="source" position={Position.Right} id={`${field.id}-source`} />
-                            )}
-
-                            <InvocationFieldLabel field={field}></InvocationFieldLabel>
-                            <InvocationFieldText field={field}></InvocationFieldText>
+                            {hasTargetEdge && (<Handle type="target" position={Position.Left} id={`${field.id}-target`} />)}
+                            {hasSourceEdge && (<Handle type="source" position={Position.Right} id={`${field.id}-source`} />)}
+                            <InvocationFieldLabel field={field} />
+                            <InvocationFieldText field={field} />
                         </div>
                     );
                 })}
             </section>
-            {whereClause && (
-                <footer className="bg-gray-200 p-2 text-xs border-t border-gray-300">
-                    <span className="font-bold">WHERE:</span>
-                    <p className="whitespace-pre-wrap font-mono">{whereClause.code}</p>
-                </footer>
-            )}
         </div>
     );
 }

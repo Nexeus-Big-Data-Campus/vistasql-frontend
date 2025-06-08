@@ -11,8 +11,8 @@ export interface Query {
     cte: Query[];
     fromClause: FromClause;
     selectClause: SelectClause;
-    whereClause: WhereClause;
-    orderByClause: OrderByClause;
+    whereClause: WhereClause | null;
+    orderByClause: OrderByClause | null;
     joins: Join[];
     errors: LexicalError[];
 }

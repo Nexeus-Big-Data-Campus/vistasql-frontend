@@ -1,4 +1,5 @@
 import React from 'react';
+import { Handle, Position } from '@xyflow/react';
 
 interface Props {
     data: {
@@ -9,6 +10,7 @@ interface Props {
 export default function WhereNode({ data }: Props) {
     return (
         <div className="rounded-t-xs overflow-visible border-1 bg-yellow-100 border-yellow-400">
+            <Handle type="source" position={Position.Right} id="source" />
             <header className='py-1 px-2 bg-yellow-400 flex items-center justify-between'>
                 <span className='text-lg text-black'>WHERE</span>
             </header>
@@ -17,4 +19,4 @@ export default function WhereNode({ data }: Props) {
             </section>
         </div>
     );
-} 
+}

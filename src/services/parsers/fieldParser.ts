@@ -5,25 +5,25 @@ import murmur from "murmurhash-js";
 import { Join } from '../../interfaces/join';
 import { Query, TableReference } from '../../interfaces/query';
 
-export function processColumn(term: Node, references: TableReference[], joins: Join[], cte: Query[]): Field | null {
+export function processColumn(term: Node, references: TableReference[], joins: Join[], cte: Query[], queryId: string): Field | null {
     const alias = term?.childForFieldName('alias')?.text;
     const value = term?.childForFieldName('value')?.type;
 
     switch (value) {
         case 'all_fields':
-            return processAllFieldsSelector(references, joins);
+            return processAllFieldsSelector(references, joins, queryId);
         case 'field':
-            return processField(term, references, joins, cte, alias);
+            return processField(term, references, joins, cte, alias, queryId);
         case 'invocation':
-            return processInvocationField(term, references, joins, cte, alias);
+            return processInvocationField(term, references, joins, cte, alias, queryId);
         default: 
             return null;
     }
 }
 
-function processAllFieldsSelector(references: TableReference[], joins: Join[]): Field {
+function processAllFieldsSelector(references: TableReference[], joins: Join[], queryId: string): Field {
     return {
-        id: murmur.murmur3('all_fields' + Math.random() * 1000),
+        id: `field-${queryId}-all`,
         name: '*',
         text: '*',
         alias: '*',
@@ -33,16 +33,16 @@ function processAllFieldsSelector(references: TableReference[], joins: Join[]): 
     };
 }   
 
-function processInvocationField(term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined): InvocationField {
+function processInvocationField(term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined, queryId: string): InvocationField {
     const invocation = getDirectChildByType(term, 'invocation')[0];
     const invocationName = getDirectChildByType(invocation, 'object_reference')[0]?.text;
     const parameters = getDirectChildByType(invocation, 'term');
     const fieldParameters = parameters.filter(p => p.childForFieldName('value')?.type === 'field');
-    const fields = fieldParameters.map((p) => processField(p, references, joins, cte, alias));
+    const fields = fieldParameters.map((p) => processField(p, references, joins, cte, alias, queryId));
     const fieldReferences = fields.map((f) => f.references).flat();
 
     return {
-        id: murmur.murmur3(term.text + Math.random() * 1000),
+        id: `field-${queryId}-invocation-${murmur.murmur3(term.text)}`,
         name: term.text,
         text: term.text,
         alias: alias ?? term.text,
@@ -54,10 +54,13 @@ function processInvocationField(term: Node, references: TableReference[], joins:
     };
 }
 
-function processField(term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined): Field {
+function processField(term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined, queryId: string): Field {
     const [_originAlias, fieldName] = term.text.split('.');
     const fieldReferences = findReferencesForField(term, references, joins, cte, alias ?? term.text);
-    const id = fieldReferences.length === 1 && fieldReferences[0].origin === FieldOrigin.CTE ? fieldReferences[0].fieldId : murmur.murmur3(term.text + Math.random() * 1000);
+    
+    const id = fieldReferences.length === 1 && fieldReferences[0].origin === FieldOrigin.CTE 
+        ? fieldReferences[0].fieldId 
+        : `field-${queryId}-${murmur.murmur3(term.text)}`;
 
     return {
         id,
@@ -77,14 +80,10 @@ function findReferencesForField(term: Node, references: TableReference[], joins:
     if (referenceAlias && fieldName) {
         const referencedTable = cte.filter(qc => qc.name === referenceAlias || qc.alias === referenceAlias);
         
-        // Grab origin field from subquery
         let referenceAllSelector: Field | undefined;
         referencedTable.forEach(table => {
             table.selectClause.fields.forEach(f => {
-                if (f.isAllSelector) {
-                    referenceAllSelector = f;
-                }
-
+                if (f.isAllSelector) referenceAllSelector = f;
                 if(f.name === fieldName || f.alias === fieldName) {
                     fieldReferences.push(createFieldReference(f.id, table.id, FieldOrigin.CTE));
                     return;
@@ -96,9 +95,7 @@ function findReferencesForField(term: Node, references: TableReference[], joins:
             fieldReferences.push(createFieldReference(referenceAllSelector.id, referencedTable[0].id, FieldOrigin.CTE));
         }
 
-        if (fieldReferences.length > 0) {
-            return fieldReferences;
-        }
+        if (fieldReferences.length > 0) return fieldReferences;
 
         references.forEach(ref => {
             if(ref.alias === referenceAlias || ref.name === referenceAlias) {
@@ -112,7 +109,6 @@ function findReferencesForField(term: Node, references: TableReference[], joins:
             }
         });
     } else {
-        // Search for fields without table alias
         cte.forEach((table) => {
             table.selectClause.fields.forEach((f) => {
                 if (f.alias === alias) {
@@ -129,22 +125,15 @@ function findReferencesForField(term: Node, references: TableReference[], joins:
 
 function getFromClauseAndJoinsReferences(references: TableReference[], joins: Join[]): FieldReference[] {
     const fieldReferences: FieldReference[] = [];
-
     references.forEach((ref) => {
         fieldReferences.push(createFieldReference(ref.id, ref.id, FieldOrigin.REFERENCE));
     });
-
     joins.forEach((join) => {
         fieldReferences.push(createFieldReference(join.id, join.id, FieldOrigin.JOIN));
     });
-
     return fieldReferences;
 }
 
 function createFieldReference(fieldId: string, nodeId: string, origin: FieldOrigin): FieldReference {
-    return {
-        fieldId,
-        nodeId,
-        origin,
-    };
+    return { fieldId, nodeId, origin };
 }
