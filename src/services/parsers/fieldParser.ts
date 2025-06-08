@@ -57,6 +57,9 @@ function processInvocationField(term: Node, references: TableReference[], joins:
 function processField(term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined): Field {
     const [_originAlias, fieldName] = term.text.split('.');
     const fieldReferences = findReferencesForField(term, references, joins, cte, alias ?? term.text);
+    
+    // --- LÍNEA RESTAURADA ---
+    // Volvemos a la lógica original que reutiliza el ID.
     const id = fieldReferences.length === 1 && fieldReferences[0].origin === FieldOrigin.CTE ? fieldReferences[0].fieldId : murmur.murmur3(term.text + Math.random() * 1000);
 
     return {
@@ -77,7 +80,6 @@ function findReferencesForField(term: Node, references: TableReference[], joins:
     if (referenceAlias && fieldName) {
         const referencedTable = cte.filter(qc => qc.name === referenceAlias || qc.alias === referenceAlias);
         
-        // Grab origin field from subquery
         let referenceAllSelector: Field | undefined;
         referencedTable.forEach(table => {
             table.selectClause.fields.forEach(f => {
@@ -112,7 +114,6 @@ function findReferencesForField(term: Node, references: TableReference[], joins:
             }
         });
     } else {
-        // Search for fields without table alias
         cte.forEach((table) => {
             table.selectClause.fields.forEach((f) => {
                 if (f.alias === alias) {

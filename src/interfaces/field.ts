@@ -6,6 +6,7 @@ export interface Field {
     references: FieldReference[];
     isAllSelector: boolean;
     isAmbiguous: boolean;
+    isSource?: boolean;
 }
 
 export interface InvocationField extends Field {

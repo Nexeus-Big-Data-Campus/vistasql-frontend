@@ -72,7 +72,7 @@ const flattenQueryTree = (node: Query, allCteQueries: Query[], parentHash?: stri
 
     
     const newReferences = node.fromClause.references.filter((ref) => {
-        return !allCteQueries.some(cte => cte.name === ref.name || cte.alias === ref.name);
+        return !allCteQueries.some(cte => cte.name === ref.name);
     });
 
     newReferences.forEach((reference) => {
@@ -189,6 +189,21 @@ export const useQueryFlow = (queryTree: Query[]) => {
         
         const allNodes = queryTree.map((node) => flattenQueryTree(node, allCteQueries)).flat();
         const allEdges = getAllEdgesFromTree(allNodes);
+        
+        allNodes.forEach(node => {
+            if (node.type === 'query') {
+                const queryData = node.data as Query;
+                queryData.selectClause.fields.forEach(field => {
+                    // Un campo es fuente si existe alguna conexión (edge) que salga
+                    // de este nodo (node.id) y de este campo específico (field.id).
+                    field.isSource = allEdges.some(edge =>
+                        edge.source === node.id &&
+                        edge.sourceHandle === `${field.id}-source`
+                    );
+                });
+            }
+        });
+
         const graphNodes = buildLayout(allNodes, allEdges);
 
         return [graphNodes, allEdges];

@@ -1,5 +1,5 @@
 import { Handle, Position, useReactFlow } from '@xyflow/react';
-import React, { useState } from 'react';
+import React from 'react';
 import { Query } from '../../../interfaces/query';
 import { Field } from '../../../interfaces/field';
 import { EDGE_AMBIGUOUS_CLASS, EDGE_HIGHLIGHT_CLASS, FIELD_HIGHLIGHT_CLASS } from '../QueryDisplay';
@@ -34,7 +34,7 @@ interface Props {
 }
 
 export default function QueryNode({ data, resetHighlight }: Props) {
-    const { id, name, selectClause, type } = data;
+    const { name, selectClause, type } = data;
     const { setEdges } = useReactFlow();
 
     const onFieldClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, field: Field, index: number) => {
@@ -53,7 +53,7 @@ export default function QueryNode({ data, resetHighlight }: Props) {
     const highlightEdges = (field: Field) => {
         setEdges((prevEdges) => {
             const updated = prevEdges.map((e) => {
-                const isFieldEdge = e.id.includes(field.id) || (field.references?.parentId && e.id.endsWith(field.references?.parentId));
+                const isFieldEdge = e.id.includes(field.id) || (field.references?.some((ref: any) => ref.parentId && e.id.endsWith(ref.parentId)));
 
                 if (!isFieldEdge) {
                     return {
@@ -76,8 +76,6 @@ export default function QueryNode({ data, resetHighlight }: Props) {
 
     return (
         <div className="rounded-t-xs overflow-visible border-1 bg-gray-900">
-            {/* <Handle type="target" position={Position.Left} id={'target'} />
-            <Handle type="source" position={Position.Right} id={'source'} /> */}
             <header className='py-1 px-2 bg-gray-900 flex items-center justify-between'>
                 <span className='text-lg text-white'>{name}</span>
                 <TypeLabel type={type}></TypeLabel>
@@ -88,8 +86,13 @@ export default function QueryNode({ data, resetHighlight }: Props) {
                         onClick={(event) => onFieldClick(event, field, index)}>
                         {field.alias}
 
-                        <Handle type="target" position={Position.Left} id={`${field.id}-target`} />
-                        <Handle type="source" position={Position.Right} id={`${field.id}-source`} />
+                        {field.references && field.references.length > 0 && (
+                            <Handle type="target" position={Position.Left} id={`${field.id}-target`} />
+                        )}
+
+                        {field.isSource && (
+                            <Handle type="source" position={Position.Right} id={`${field.id}-source`} />
+                        )}
 
                         <InvocationFieldLabel field={field}></InvocationFieldLabel>
                         <InvocationFieldText field={field}></InvocationFieldText>
