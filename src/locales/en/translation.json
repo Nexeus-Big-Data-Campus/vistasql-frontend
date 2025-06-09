@@ -6,6 +6,8 @@
     "goToEditor": "Go to Editor"
   },
   "header": {
+    "myProfile": "My Profile",
+    "logout": "Log Out",
     "appName": "VistaSQL",
     "login":"LogIn",
     "signUp":"signUp"
