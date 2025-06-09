@@ -22,14 +22,15 @@ export function processColumn(term: Node, references: TableReference[], joins: J
 }
 
 function processAllFieldsSelector(references: TableReference[], joins: Join[]): Field {
+    const id = murmur.murmur3('all_fields' + Math.random() * 1000);
     return {
-        id: murmur.murmur3('all_fields' + Math.random() * 1000),
+        id,
         name: '*',
         text: '*',
         alias: '*',
         isAllSelector: true,
         isAmbiguous: false,
-        references: getFromClauseAndJoinsReferences(references, joins)
+        references: getFromClauseAndJoinsReferences(id, references, joins)
     };
 }   
 
@@ -55,9 +56,9 @@ function processInvocationField(term: Node, references: TableReference[], joins:
 }
 
 function processField(term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined): Field {
+    const id = murmur.murmur3(term.text + Math.random() * 1000);
     const [_originAlias, fieldName] = term.text.split('.');
-    const fieldReferences = findReferencesForField(term, references, joins, cte, alias ?? term.text);
-    const id = fieldReferences.length === 1 && fieldReferences[0].origin === FieldOrigin.CTE ? fieldReferences[0].fieldId : murmur.murmur3(term.text + Math.random() * 1000);
+    const fieldReferences = findReferencesForField(id, term, references, joins, cte, alias ?? term.text);
 
     return {
         id,
@@ -70,7 +71,7 @@ function processField(term: Node, references: TableReference[], joins: Join[], c
     }
 }
 
-function findReferencesForField(term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined): FieldReference[] {
+function findReferencesForField(fieldId: string, term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined): FieldReference[] {
     let fieldReferences: FieldReference[] = [];
     const [referenceAlias, fieldName] = term.text.split('.');
 
@@ -102,7 +103,7 @@ function findReferencesForField(term: Node, references: TableReference[], joins:
 
         references.forEach(ref => {
             if(ref.alias === referenceAlias || ref.name === referenceAlias) {
-                fieldReferences.push(createFieldReference(ref.id, ref.id, FieldOrigin.REFERENCE));
+                fieldReferences.push(createFieldReference(fieldId, ref.id, FieldOrigin.REFERENCE));
             }
         });
 
@@ -121,17 +122,17 @@ function findReferencesForField(term: Node, references: TableReference[], joins:
             });
         });
 
-        fieldReferences = fieldReferences.concat(getFromClauseAndJoinsReferences(references, joins));
+        fieldReferences = fieldReferences.concat(getFromClauseAndJoinsReferences(fieldId, references, joins));
     }
 
     return fieldReferences;
 }
 
-function getFromClauseAndJoinsReferences(references: TableReference[], joins: Join[]): FieldReference[] {
+function getFromClauseAndJoinsReferences(fieldId: string, references: TableReference[], joins: Join[]): FieldReference[] {
     const fieldReferences: FieldReference[] = [];
 
     references.forEach((ref) => {
-        fieldReferences.push(createFieldReference(ref.id, ref.id, FieldOrigin.REFERENCE));
+        fieldReferences.push(createFieldReference(fieldId, ref.id, FieldOrigin.REFERENCE));
     });
 
     joins.forEach((join) => {

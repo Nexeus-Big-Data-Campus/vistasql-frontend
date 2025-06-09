@@ -1,7 +1,7 @@
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import React, { useState } from 'react';
 import { Query } from '../../../interfaces/query';
-import { Field } from '../../../interfaces/field';
+import { Field, FieldReference } from '../../../interfaces/field';
 import { EDGE_AMBIGUOUS_CLASS, EDGE_HIGHLIGHT_CLASS, FIELD_HIGHLIGHT_CLASS } from '../QueryDisplay';
 
 function TypeLabel({ type }: { type: string }) {
@@ -40,20 +40,24 @@ export default function QueryNode({ data, resetHighlight }: Props) {
     const onFieldClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, field: Field, index: number) => {
         event.stopPropagation();
         resetHighlight();
-        highlightField(field.id);
+        highlightField(field);
         highlightEdges(field);
     }
 
-    const highlightField = (fieldId: string) => {
-        document.querySelectorAll(`[data-fieldid="${fieldId}"]`).forEach((field) => {
-            field.classList.add(FIELD_HIGHLIGHT_CLASS);
+    const highlightField = (field: Field) => {
+        const highlightIds = [field.id, ...field.references.map(r => r.fieldId)];
+
+        highlightIds.forEach(fieldId => {
+            document.querySelectorAll(`[data-fieldid="${fieldId}"]`).forEach((field) => {
+                field.classList.add(FIELD_HIGHLIGHT_CLASS);
+            });
         });
     };
 
     const highlightEdges = (field: Field) => {
         setEdges((prevEdges) => {
             const updated = prevEdges.map((e) => {
-                const isFieldEdge = e.id.includes(field.id) || (field.references?.parentId && e.id.endsWith(field.references?.parentId));
+                const isFieldEdge = e.id.includes(field.id) || field.references.some((ref: FieldReference) => e.id.includes(ref.fieldId));
 
                 if (!isFieldEdge) {
                     return {
@@ -66,7 +70,7 @@ export default function QueryNode({ data, resetHighlight }: Props) {
                 return {
                     ...e,
                     animated: true,
-                    className: field.isAmbiguous ? EDGE_AMBIGUOUS_CLASS : EDGE_HIGHLIGHT_CLASS,
+                    className: EDGE_HIGHLIGHT_CLASS,
                 };
             });
 
