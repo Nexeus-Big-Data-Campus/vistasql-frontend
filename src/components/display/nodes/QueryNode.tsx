@@ -1,7 +1,7 @@
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import React, { useState } from 'react';
 import { Query } from '../../../interfaces/query';
-import { Field } from '../../../interfaces/field';
+import { Field, FieldReference } from '../../../interfaces/field';
 import { EDGE_AMBIGUOUS_CLASS, EDGE_HIGHLIGHT_CLASS, FIELD_HIGHLIGHT_CLASS } from '../QueryDisplay';
 
 function TypeLabel({ type }: { type: string }) {
@@ -53,11 +53,7 @@ export default function QueryNode({ data, resetHighlight }: Props) {
     const highlightEdges = (field: Field) => {
         setEdges((prevEdges) => {
             const updated = prevEdges.map((e) => {
-                const isFieldEdge = e.id.includes(field.id) || 
-                    field.references?.some(ref => 
-                        e.id.includes(ref.fieldId) || 
-                        e.id.includes(ref.nodeId)
-                    );
+                const isFieldEdge = e.id.includes(field.id) || field.references.some((ref: FieldReference) => e.id.includes(ref.fieldId));
 
                 if (!isFieldEdge) {
                     return {
@@ -70,7 +66,7 @@ export default function QueryNode({ data, resetHighlight }: Props) {
                 return {
                     ...e,
                     animated: true,
-                    className: field.isAmbiguous ? EDGE_AMBIGUOUS_CLASS : EDGE_HIGHLIGHT_CLASS,
+                    className: EDGE_HIGHLIGHT_CLASS,
                 };
             });
 
