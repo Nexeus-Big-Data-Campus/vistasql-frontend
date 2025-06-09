@@ -40,13 +40,17 @@ export default function QueryNode({ data, resetHighlight }: Props) {
     const onFieldClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, field: Field, index: number) => {
         event.stopPropagation();
         resetHighlight();
-        highlightField(field.id);
+        highlightField(field);
         highlightEdges(field);
     }
 
-    const highlightField = (fieldId: string) => {
-        document.querySelectorAll(`[data-fieldid="${fieldId}"]`).forEach((field) => {
-            field.classList.add(FIELD_HIGHLIGHT_CLASS);
+    const highlightField = (field: Field) => {
+        const highlightIds = [field.id, ...field.references.map(r => r.fieldId)];
+
+        highlightIds.forEach(fieldId => {
+            document.querySelectorAll(`[data-fieldid="${fieldId}"]`).forEach((field) => {
+                field.classList.add(FIELD_HIGHLIGHT_CLASS);
+            });
         });
     };
 
