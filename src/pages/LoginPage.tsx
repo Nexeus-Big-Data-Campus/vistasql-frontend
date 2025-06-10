@@ -19,21 +19,30 @@ export default function LoginPage() {
   const apiService = new ApiService();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setMessage("");
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setMessage("");
 
+  try {
     const data = await apiService.login(email, password);
     const token = data.access_token;
 
     if (!token) {
-      setMessage(t("Credenciales inválidas"));
-    };
+      setMessage(t("error.no_autorizado"));
+      setIsLoading(false);
+      return;
+    }
 
     login(token);
     navigate('/editor');
-  };
+  } catch (error: any) {
+   
+    
+    setMessage(t(error.message) || t("error.error_desconocido"));
+    setIsLoading(false);
+  }
+};
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>      

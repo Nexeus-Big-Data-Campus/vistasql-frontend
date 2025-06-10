@@ -7,6 +7,11 @@ import AppLayout from './pages/layouts/AppLayout';
 import '@fontsource/roboto';
 import React from 'react';
 import RegisterPage from './pages/RegisterPage';
+import ErrorTester from "./pages/ErrorTester";
+
+
+
+
 
 const router = createBrowserRouter([
   {
@@ -17,7 +22,8 @@ const router = createBrowserRouter([
       { path: 'editor', element: <MainEditor /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'signin', element: <RegisterPage /> },
-      { path: 'profile', element: <>TODO</>}
+      { path: 'profile', element: <>TODO</>},
+      { path: 'test-errors', element: <ErrorTester /> },
     ],
   },
 ]);

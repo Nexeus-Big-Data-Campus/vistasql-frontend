@@ -1,4 +1,6 @@
 import { Link } from "react-router";
+import React from 'react';
+import Button from '@mui/material/Button';
 
 export default function Home() {
     return (
@@ -8,6 +10,15 @@ export default function Home() {
                     Ir a Editor
                 </Link>
             </section>
+            <div>
+      <h1>Bienvenido a Vista SQL</h1>
+      <Link to="/test-errors" style={{ textDecoration: 'none' }}>
+        <Button variant="outlined" color="primary">
+          🧪 Probar errores
+        </Button>
+      </Link>
+    </div>
         </>
+        
     );
 }
