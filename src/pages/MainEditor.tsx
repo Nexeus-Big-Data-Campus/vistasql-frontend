@@ -3,6 +3,7 @@ import SQLEditor from "../components/editor/SQLEditor";
 import QueryDisplay from "../components/display/QueryDisplay";
 import Grid from "@mui/material/Grid";
 import { Query } from "../interfaces/query";
+import { ROUTES } from "./Routes";
 
 const initialQueryTree: Query[] = [];
 
