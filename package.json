@@ -23,7 +23,6 @@
     "react-simple-code-editor": "^0.14.1",
     "tree-sitter-sql": "^0.1.0",
     "web-tree-sitter": "^0.25.3",
-    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "vite",
