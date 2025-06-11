@@ -134,15 +134,6 @@ function getFromReferences(node: Node, cte: Query[]): TableReference[] {
 
         const id = murmur.murmur3(`${alias}-${name}` + Math.random() * 1000);
 
-        
-        if (name && cte) {
-            cte.forEach((element: Query) => {
-                if (element.name === name) {
-                    element.alias = alias;
-                }
-            });
-        }
-
         references.push({
             id,
             alias,

@@ -1,6 +1,6 @@
 import { Handle, Position } from "@xyflow/react";
 import { Join } from "../../../interfaces/join";
-import { Tooltip } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 
 interface Props {
     data: Join;
@@ -26,11 +26,18 @@ export default function JoinNode({ data }: Props) {
     }
 
     return <>
-        <div className="!rounded-[50%] !bg-white !border-1 !boder-black p-4 text-center aspect-square !text-sm max-w-[100px] uppercase flex flex-col items-center">
+        <Box 
+            className="!rounded-[50%] !border-1 p-4 text-center aspect-square !text-sm max-w-[100px] uppercase flex flex-col items-center"
+            sx={{
+                bgcolor: 'background.paper',
+                borderColor: 'divider',
+                color: 'text.primary'
+            }}
+        >
             <Tooltip title={getJoinText()} placement="top">
                 <img src={getJoinIcon()} alt="join" className="w-6 h-6"/>
             </Tooltip>
-        </div>
+        </Box>
         <Handle type="target" position={Position.Left} id={'target'}/>
         <Handle type="source" position={Position.Right} id={'source'}/>
     </>

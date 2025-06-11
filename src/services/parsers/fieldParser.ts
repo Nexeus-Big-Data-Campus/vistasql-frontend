@@ -22,14 +22,15 @@ export function processColumn(term: Node, references: TableReference[], joins: J
 }
 
 function processAllFieldsSelector(references: TableReference[], joins: Join[]): Field {
+    const id = murmur.murmur3('all_fields' + Math.random() * 1000);
     return {
-        id: murmur.murmur3('all_fields' + Math.random() * 1000),
+        id,
         name: '*',
         text: '*',
         alias: '*',
         isAllSelector: true,
         isAmbiguous: false,
-        references: getFromClauseAndJoinsReferences(references, joins)
+        references: getFromClauseAndJoinsReferences(id, references, joins)
     };
 }   
 
@@ -55,65 +56,61 @@ function processInvocationField(term: Node, references: TableReference[], joins:
 }
 
 function processField(term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined): Field {
-    const [_originAlias, fieldName] = term.text.split('.');
-    const fieldReferences = findReferencesForField(term, references, joins, cte, alias ?? term.text);
+    const id = murmur.murmur3(term.text + Math.random() * 1000);
+    const text = term.childForFieldName('value')?.text ?? term.text;
+    const name = text.includes('.') ? text.split('.').pop()! : text;
     
-    // --- LÍNEA RESTAURADA ---
-    // Volvemos a la lógica original que reutiliza el ID.
-    const id = fieldReferences.length === 1 && fieldReferences[0].origin === FieldOrigin.CTE ? fieldReferences[0].fieldId : murmur.murmur3(term.text + Math.random() * 1000);
+    const fieldReferences = findReferencesForField(id, text, references, joins, cte, alias ?? text);
 
     return {
         id,
-        name: fieldName,
-        text: term.text,
-        alias: alias ?? term.text,
+        name: name,
+        text: text,
+        alias: alias ?? name,
         isAllSelector: false,
         references: fieldReferences,
         isAmbiguous: fieldReferences.length > 1,
     }
 }
 
-function findReferencesForField(term: Node, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined): FieldReference[] {
-    let fieldReferences: FieldReference[] = [];
-    const [referenceAlias, fieldName] = term.text.split('.');
+function findReferencesForField(fieldId: string, text: string, references: TableReference[], joins: Join[], cte: Query[], alias: string | undefined): FieldReference[] {
+    const fieldReferences: FieldReference[] = [];
+    const [referenceAlias, fieldName] = text.split('.');
 
     if (referenceAlias && fieldName) {
-        const referencedTable = cte.filter(qc => qc.name === referenceAlias || qc.alias === referenceAlias);
+        // Find the source by its alias in the current query's scope
+        const sourceRef = references.find(r => r.alias === referenceAlias || r.name === referenceAlias);
         
-        let referenceAllSelector: Field | undefined;
-        referencedTable.forEach(table => {
-            table.selectClause.fields.forEach(f => {
-                if (f.isAllSelector) {
-                    referenceAllSelector = f;
+        if (sourceRef) {
+            // Check if the source corresponds to a known CTE
+            const referencedCTE = cte.find(c => c.name === sourceRef.name);
+            if (referencedCTE) {
+                // It's a CTE, so we link to the field inside the Query node
+                let referenceAllSelector: Field | undefined;
+                referencedCTE.selectClause.fields.forEach(f => {
+                    if (f.isAllSelector) referenceAllSelector = f;
+                    if (f.name === fieldName || f.alias === fieldName) {
+                        fieldReferences.push(createFieldReference(f.id, referencedCTE.id, FieldOrigin.CTE));
+                    }
+                });
+                if (fieldReferences.length === 0 && referenceAllSelector) {
+                    fieldReferences.push(createFieldReference(referenceAllSelector.id, referencedCTE.id, FieldOrigin.CTE));
                 }
-
-                if(f.name === fieldName || f.alias === fieldName) {
-                    fieldReferences.push(createFieldReference(f.id, table.id, FieldOrigin.CTE));
-                    return;
-                }
-            });
-        });
-
-        if(fieldReferences.length === 0 && referenceAllSelector) {
-            fieldReferences.push(createFieldReference(referenceAllSelector.id, referencedTable[0].id, FieldOrigin.CTE));
+                return fieldReferences; // Important: Stop here once the CTE is processed
+            }
         }
 
-        if (fieldReferences.length > 0) {
-            return fieldReferences;
+        // If it's not a CTE or not found in CTEs, treat it as a base table or join
+        const joinRef = joins.find(j => j.alias === referenceAlias || j.source === referenceAlias);
+        if (joinRef) {
+            fieldReferences.push(createFieldReference(joinRef.id, joinRef.id, FieldOrigin.JOIN));
+        } else if (sourceRef) {
+            fieldReferences.push(createFieldReference(fieldId, sourceRef.id, FieldOrigin.REFERENCE));
         }
 
-        references.forEach(ref => {
-            if(ref.alias === referenceAlias || ref.name === referenceAlias) {
-                fieldReferences.push(createFieldReference(ref.id, ref.id, FieldOrigin.REFERENCE));
-            }
-        });
-
-        joins.forEach(join => {
-            if(join.alias === referenceAlias || join.source === referenceAlias) {
-                fieldReferences.push(createFieldReference(join.id, join.id, FieldOrigin.JOIN));
-            }
-        });
     } else {
+        // Unqualified field (no table alias)
+        // Check all available CTEs for a field with a matching alias
         cte.forEach((table) => {
             table.selectClause.fields.forEach((f) => {
                 if (f.alias === alias) {
@@ -122,17 +119,21 @@ function findReferencesForField(term: Node, references: TableReference[], joins:
             });
         });
 
-        fieldReferences = fieldReferences.concat(getFromClauseAndJoinsReferences(references, joins));
+        // If no match in CTEs, assume it comes from all FROM/JOIN sources (ambiguous)
+        if (fieldReferences.length === 0) {
+            fieldReferences.push(...getFromClauseAndJoinsReferences(fieldId, references, joins));
+        }
     }
 
     return fieldReferences;
 }
 
-function getFromClauseAndJoinsReferences(references: TableReference[], joins: Join[]): FieldReference[] {
+
+function getFromClauseAndJoinsReferences(fieldId: string, references: TableReference[], joins: Join[]): FieldReference[] {
     const fieldReferences: FieldReference[] = [];
 
     references.forEach((ref) => {
-        fieldReferences.push(createFieldReference(ref.id, ref.id, FieldOrigin.REFERENCE));
+        fieldReferences.push(createFieldReference(fieldId, ref.id, FieldOrigin.REFERENCE));
     });
 
     joins.forEach((join) => {
