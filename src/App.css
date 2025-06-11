@@ -1,0 +1,15 @@
+:root {
+    --primary: #1976d2;
+}
+
+
+.highlight-field {
+    font-weight: 600;
+    background-color: var(--primary);
+    color: white;
+}
+
+.highlight-edge path {
+    stroke: var(--primary) !important;
+    stroke-width: 3px !important;
+}

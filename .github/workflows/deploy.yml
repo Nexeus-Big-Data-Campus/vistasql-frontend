@@ -1,0 +1,45 @@
+name: 🚀 Deploy React App to SiteGround via SSH
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install dependencies & build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Setup SSH and deploy with rsync
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          # Añadir host sin verificación (opcional si prefieres evitar known_hosts)
+          echo "🔐 Desactivando comprobación estricta de clave"
+          echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+
+          # Limpiar public_html
+          echo "🧹 Borrando contenido anterior..."
+          ssh -p 18765 u2745-gx48k1bmxwyj@ssh.vistasql.com "rm -rf ~/www/vistasql.com/public_html/* && mkdir -p ~/www/vistasql.com/public_html"
+
+          echo "📦 Subiendo nueva versión..."
+          rsync -avz -e "ssh -p 18765" ./build/ u2745-gx48k1bmxwyj@ssh.vistasql.com:/home/u2745-gx48k1bmxwyj/www/vistasql.com/public_html/
+
+      - name: 🔄 Forzar refresco de caché NGINX (timestamp update)
+        run: |
+          ssh -p 18765 u2745-gx48k1bmxwyj@ssh.vistasql.com << EOF
+            echo "🔁 Forzando modificación de archivos clave..."
+            touch ~/www/vistasql.com/public_html/index.html
+            touch ~/www/vistasql.com/public_html/robots.txt
+            echo "✅ Caché forzada por timestamps actualizados"
+          EOF
