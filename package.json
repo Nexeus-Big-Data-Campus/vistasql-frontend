@@ -22,7 +22,7 @@
     "react-router": "^7.5.3",
     "react-simple-code-editor": "^0.14.1",
     "tree-sitter-sql": "^0.1.0",
-    "web-tree-sitter": "^0.25.3",
+    "web-tree-sitter": "^0.25.3"
   },
   "scripts": {
     "start": "vite",
