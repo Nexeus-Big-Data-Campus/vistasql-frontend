@@ -7,7 +7,7 @@ import { ApiService } from "../services/ApiService";
 import ErrorIcon from "@mui/icons-material/Error";
 import { Link, useNavigate } from 'react-router';
 import { UserContext } from "../contexts/UserContext";
-import { ROUTES } from "./Routes";
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -33,7 +33,7 @@ export default function LoginPage() {
     };
 
     login(token);
-    navigate(ROUTES.editor);
+    navigate('/app/editor');
   };
 
   return (
@@ -119,7 +119,7 @@ export default function LoginPage() {
                 {message}
               </Alert>
             )}
-            <Link to={ROUTES.signin}>
+            <Link to='/app/signin'>
               <Button
                 variant="text"
                 color="secondary"

@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import { ApiService } from "../services/ApiService";
 import { Link, useNavigate } from 'react-router';
 import { UserContext } from "../contexts/UserContext";
-import { ROUTES } from './Routes';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -32,7 +31,7 @@ export default function RegisterPage() {
     }
 
     login(token);
-    navigate(ROUTES.editor);
+    navigate('/app/editor');
   };
 
   return (
@@ -115,7 +114,7 @@ export default function RegisterPage() {
                 {message}
               </Alert>
             )}
-            <Link to={ROUTES.login}>
+            <Link to={'/app/login'}>
               <Button variant="text" color="secondary" sx={{ mt: 2, textTransform: "none" }} fullWidth>
                 {t('registerForm.loginButton')}
               </Button>

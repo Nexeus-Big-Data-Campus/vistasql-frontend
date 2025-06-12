@@ -7,8 +7,6 @@ import { useTranslation } from "react-i18next";
 import { useAppTheme } from "../theme/ThemeContext";
 import { useNavigate } from "react-router"; 
 import { UserContext } from "../contexts/UserContext";
-import { ROUTES } from '../pages/Routes';
-console.log(ROUTES);
 
 export default function Header() {
     const { t, i18n } = useTranslation();
@@ -44,13 +42,13 @@ export default function Header() {
 
     const handleProfile = () => {
         handleUserMenuClose();
-        navigate(ROUTES.profile);
+        navigate('/app/profile');
     };
 
     const handleLogout = () => {
         handleUserMenuClose();
         if (logout) logout();
-        navigate(ROUTES.login);
+        navigate('/app/login');
     };
 
     return (
@@ -60,7 +58,7 @@ export default function Header() {
                     variant="h6" 
                     component="div" 
                     sx={{ flexGrow: 1, cursor: 'pointer' }} 
-                    onClick={() => navigate(ROUTES.home)} 
+                    onClick={() => navigate('/home')} 
                 >
                     {t('header.appName')}
                 </Typography>                
@@ -110,8 +108,8 @@ export default function Header() {
                     </>
                 ) : (                    
                     <>
-                        <Button color="inherit" onClick={() => navigate(ROUTES.login)}>{t('header.login')}</Button>
-                        <Button color="inherit" onClick={() => navigate(ROUTES.signin)}>{t('header.signUp')}</Button>
+                        <Button color="inherit" onClick={() => navigate('/app/login')}>{t('header.login')}</Button>
+                        <Button color="inherit" onClick={() => navigate('/app/signin')}>{t('header.signUp')}</Button>
                     </>
                 )}
             </Toolbar>
