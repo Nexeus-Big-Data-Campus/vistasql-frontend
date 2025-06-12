@@ -1,4 +1,6 @@
 import { Link } from "react-router";
+import React from 'react';
+import Button from '@mui/material/Button';
 
 export default function Home() {
     return (
@@ -8,6 +10,8 @@ export default function Home() {
                     Ir a Editor
                 </Link>
             </section>
+            
         </>
+        
     );
 }

@@ -39,6 +39,21 @@
     "errorMessage": "Login error.",
     "connectionErrorMessage": "Connection error or incorrect credentials.",
     "createAccountButton": "Create Account"
-  }
+  },
+
+  
+  "error": {
+    "no_autorizado": "Unauthorized. Check your credentials.",
+    "sin_permisos": "You do not have permission to perform this action.",
+    "recurso_no_encontrado": "Resource not found.",
+    "usuario_ya_existe": "User already exists.",
+    "error_interno_servidor": "Internal server error.",
+    "solicitud_invalida": "Invalid request.",
+    "error_inesperado": "An unexpected error occurred.",
+    "no_conexion": "Cannot connect to the server. Check your connection.",
+    "error_desconocido": "Unknown error."
+  
+}
+
   
 }

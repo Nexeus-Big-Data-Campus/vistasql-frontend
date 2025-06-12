@@ -8,6 +8,11 @@ import '@fontsource/roboto';
 import React from 'react';
 import RegisterPage from './pages/RegisterPage';
 
+
+
+
+
+
 const router = createBrowserRouter([
   {
     path: '/',
@@ -17,7 +22,8 @@ const router = createBrowserRouter([
       { path: 'editor', element: <MainEditor /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'signin', element: <RegisterPage /> },
-      { path: 'profile', element: <>TODO</>}
+      { path: 'profile', element: <>TODO</>},
+      
     ],
   },
 ]);

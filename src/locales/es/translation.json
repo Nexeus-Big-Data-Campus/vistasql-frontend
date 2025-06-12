@@ -40,6 +40,31 @@
     "errorMessage": "Error en el inicio de sesión.",
     "connectionErrorMessage": "Error de conexión o credenciales incorrectas.",
     "createAccountButton": "Crear cuenta"
+  },
+
+  
+  "error": {
+    "no_autorizado": "No autorizado. Verifica tus credenciales.",
+    "sin_permisos": "No tienes permisos para realizar esta acción.",
+    "recurso_no_encontrado": "Recurso no encontrado.",
+    "usuario_ya_existe": "El usuario ya existe.",
+    "error_interno_servidor": "Error interno del servidor.",
+    "solicitud_invalida": "Solicitud inválida.",
+    "error_inesperado": "Ocurrió un error inesperado.",
+    "no_conexion": "No se pudo conectar con el servidor. Verifica tu conexión.",
+    "error_desconocido": "Error desconocido."
   }
+  
+
+
+
+
+
+
+
+
+
+
+  
   
 }
