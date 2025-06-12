@@ -32,53 +32,44 @@ export class ApiService {
     return await this.makeRequest("/profile", "GET");
   }
 
- private async makeRequest(endpoint: string, method: string, body?: any) {
+private async makeRequest(endpoint: string, method: string, body?: any) {
   try {
     const response = await fetch(`${this.API_URL}${endpoint}`, {
       method,
       headers: this.getHeaders(),
-      body: JSON.stringify(body),
+      body: body ? JSON.stringify(body) : undefined,
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const errorBody = await response.json().catch(() => ({}));
 
-      let errorKey = "error.error_inesperado";
+      const message = errorBody.detail || "error.error_inesperado";
+      const status = response.status;
 
-      switch (response.status) {
-        case 400:
-          errorKey = error.detail || "error.solicitud_invalida";
-          break;
-        case 401:
-          errorKey = "error.no_autorizado";
-          break;
-        case 403:
-          errorKey = "error.sin_permisos";
-          break;
-        case 404:
-          errorKey = "error.recurso_no_encontrado";
-          break;
-        case 409:
-          errorKey = error.detail || "error.usuario_ya_existe";
-          break;
-        case 500:
-          errorKey = "error.error_interno_servidor";
-          break;
-        default:
-          errorKey = error.detail || "error.error_inesperado";
-      }
-
-      throw new Error(errorKey);
+      
+      throw {
+        status,
+        message,
+      };
     }
 
     return await response.json();
 
   } catch (err: any) {
+
+   
     if (err instanceof TypeError || err.message === "Failed to fetch") {
-      throw new Error("error.no_conexion");
+      throw {
+        status: 0,
+        message: "error.no_conexion",
+      };
     }
-    throw new Error(err.message || "error.error_desconocido");
+
+    
+    throw {
+      status: err.status || -1,
+      message: err.message || "error.error_desconocido",
+    };
   }
 }
-
 }

@@ -37,11 +37,16 @@ export default function LoginPage() {
     login(token);
     navigate('/editor');
   } catch (error: any) {
-   
-    
-    setMessage(t(error.message) || t("error.error_desconocido"));
-    setIsLoading(false);
-  }
+  console.error("Error de login:", error); 
+
+  const errorMessage =
+    error && typeof error.message === "string"
+      ? t(error.message)
+      : t("error.error_desconocido");
+
+  setMessage(errorMessage);
+  setIsLoading(false);
+}
 };
 
   return (
