@@ -12,7 +12,10 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+  const isValidEmail = (email: string) => {
+    // Expresión para validar email
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
   const { t } = useTranslation();
   const navigate = useNavigate(); 
   const { login } = useContext(UserContext);
@@ -100,7 +103,7 @@ export default function RegisterPage() {
                 color="primary"
                 fullWidth
                 size="large"
-                disabled={isLoading}
+                disabled={isLoading || password.length < 8 || !isValidEmail(email)}
                 sx={{ mt: 1, fontWeight: "bold", letterSpacing: 1 }}
               >
                 {isLoading ? <CircularProgress size={24} color="inherit" /> : t('registerForm.submitButton')}
