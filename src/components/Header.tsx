@@ -31,7 +31,6 @@ export default function Header() {
         }
     };
 
-    // NUEVO: handlers para el menú de usuario
     const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorElUser(event.currentTarget);
     };
@@ -42,13 +41,13 @@ export default function Header() {
 
     const handleProfile = () => {
         handleUserMenuClose();
-        navigate('/profile');
+        navigate('/app/profile');
     };
 
     const handleLogout = () => {
         handleUserMenuClose();
         if (logout) logout();
-        navigate('/login');
+        navigate('/app/login');
     };
 
 
@@ -109,8 +108,8 @@ export default function Header() {
                     </>
                 ) : (                    
                     <>
-                        <Button color="inherit" onClick={() => navigate('/login')}>{t('header.login')}</Button>
-                        <Button color="inherit" onClick={() => navigate('/signin')}>{t('header.signUp')}</Button>
+                        <Button color="inherit" onClick={() => navigate('/app/login')}>{t('header.login')}</Button>
+                        <Button color="inherit" onClick={() => navigate('/app/signin')}>{t('header.signUp')}</Button>
                     </>
                 )}
             </Toolbar>

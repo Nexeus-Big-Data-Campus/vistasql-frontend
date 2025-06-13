@@ -1,26 +1,11 @@
 import './App.css';
-import { createBrowserRouter, RouterProvider } from 'react-router';
-import Home from './pages/Home';
-import MainEditor from './pages/MainEditor';
-import LoginPage from './pages/LoginPage';
-import AppLayout from './pages/layouts/AppLayout';
+import { RouterProvider } from 'react-router';
+
+import router from './routes';
+
 import '@fontsource/roboto';
 import React from 'react';
-import RegisterPage from './pages/RegisterPage';
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <AppLayout />,
-    children: [
-      { index: true, element: <Home /> },
-      { path: 'editor', element: <MainEditor /> },
-      { path: 'login', element: <LoginPage /> },
-      { path: 'signin', element: <RegisterPage /> },
-      { path: 'profile', element: <>TODO</>}
-    ],
-  },
-]);
 
 function App() {
   return (

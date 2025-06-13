@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router';
 import { UserContext } from "../contexts/UserContext";
 import { useEffect } from "react";
 
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +34,7 @@ export default function LoginPage() {
     };
 
     login(token);
-    navigate('/editor');
+    navigate('/app/editor');
   };
 
   useEffect(() => {
@@ -123,15 +124,15 @@ export default function LoginPage() {
                 {message}
               </Alert>
             )}
-            <Link to="/signin">
+            <Link to='/app/signin'>
               <Button
-              variant="text"
-              color="secondary"
-              sx={{ mt: 2, textTransform: "none" }}
-              fullWidth
-            >
-              {t('loginForm.createAccountButton')}
-            </Button>
+                variant="text"
+                color="secondary"
+                sx={{ mt: 2, textTransform: "none" }}
+                fullWidth
+              >
+                {t('loginForm.createAccountButton')}
+              </Button>
             </Link>
           </Paper>
         </Container>

@@ -32,7 +32,7 @@ export default function RegisterPage() {
     }
 
     login(token);
-    navigate('/editor');
+    navigate('/app/editor');
   };
 
   useEffect(() => {
@@ -119,7 +119,7 @@ export default function RegisterPage() {
                 {message}
               </Alert>
             )}
-            <Link to="/login">
+            <Link to={'/app/login'}>
               <Button variant="text" color="secondary" sx={{ mt: 2, textTransform: "none" }} fullWidth>
                 {t('registerForm.loginButton')}
               </Button>
