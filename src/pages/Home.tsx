@@ -1,10 +1,14 @@
 import { Link } from "react-router";
+import { UserContext } from "../contexts/UserContext";
+import { useContext } from "react";
+
 
 export default function Home() {
+    
     return (
         <>
             <section className="flex flex-col items-center justify-center h-1/4 pt-4"> 
-                <Link to="/editor" className="bg-blue-500 rounded text-white px-4 py-2">
+                <Link to='/app/editor' className="bg-blue-500 rounded text-white px-4 py-2">
                     Ir a Editor
                 </Link>
             </section>

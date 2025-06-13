@@ -7,13 +7,15 @@ import { ApiService } from "../services/ApiService";
 import ErrorIcon from "@mui/icons-material/Error";
 import { Link, useNavigate } from 'react-router';
 import { UserContext } from "../contexts/UserContext";
+import { useEffect } from "react";
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useContext(UserContext);
+  const { login, user} = useContext(UserContext);
   
   const { t } = useTranslation();
   const apiService = new ApiService();
@@ -32,8 +34,12 @@ export default function LoginPage() {
     };
 
     login(token);
-    navigate('/editor');
+    navigate('/app/editor');
   };
+
+  useEffect(() => {
+    if (user) { navigate("/editor") }
+  }, [user,navigate])
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>      
@@ -118,15 +124,15 @@ export default function LoginPage() {
                 {message}
               </Alert>
             )}
-            <Link to="/signin">
+            <Link to='/app/signin'>
               <Button
-              variant="text"
-              color="secondary"
-              sx={{ mt: 2, textTransform: "none" }}
-              fullWidth
-            >
-              {t('loginForm.createAccountButton')}
-            </Button>
+                variant="text"
+                color="secondary"
+                sx={{ mt: 2, textTransform: "none" }}
+                fullWidth
+              >
+                {t('loginForm.createAccountButton')}
+              </Button>
             </Link>
           </Paper>
         </Container>

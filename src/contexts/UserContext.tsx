@@ -7,6 +7,12 @@ interface User {
   email: string;
 }
 
+import { useContext } from "react";
+
+export function useUser() {
+  return useContext(UserContext);
+}
+
 interface UserContextType {
   user: User | null;
   token: string | null;

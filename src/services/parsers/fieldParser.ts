@@ -128,7 +128,6 @@ function findReferencesForField(fieldId: string, text: string, references: Table
     return fieldReferences;
 }
 
-
 function getFromClauseAndJoinsReferences(fieldId: string, references: TableReference[], joins: Join[]): FieldReference[] {
     const fieldReferences: FieldReference[] = [];
 

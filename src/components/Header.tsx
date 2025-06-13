@@ -8,13 +8,13 @@ import { useAppTheme } from "../theme/ThemeContext";
 import { useNavigate } from "react-router"; 
 import { UserContext } from "../contexts/UserContext";
 
-
 export default function Header() {
     const { t, i18n } = useTranslation();
     const [anchorElLang, setAnchorElLang] = useState<null | HTMLElement>(null);
+    const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
     const { mode, toggleTheme } = useAppTheme();
     const navigate = useNavigate(); 
-    const { user } = useContext(UserContext);
+    const { user, logout } = useContext(UserContext);
 
     const changeLanguage = (lng: string) => {
         i18n.changeLanguage(lng);
@@ -30,6 +30,26 @@ export default function Header() {
             changeLanguage(lng);
         }
     };
+
+    const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorElUser(event.currentTarget);
+    };
+
+    const handleUserMenuClose = () => {
+        setAnchorElUser(null);
+    };
+
+    const handleProfile = () => {
+        handleUserMenuClose();
+        navigate('/app/profile');
+    };
+
+    const handleLogout = () => {
+        handleUserMenuClose();
+        if (logout) logout();
+        navigate('/app/login');
+    };
+
 
     return (
         <AppBar component="nav" position="relative">
@@ -66,19 +86,30 @@ export default function Header() {
                     {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
                 </IconButton>
                 {user ? (                    
-                    <IconButton
-                        color="inherit"                        
-                        onClick={() => navigate('/profile')} 
-                        aria-label="account of current user"
-                        aria-controls="menu-appbar"
-                        aria-haspopup="true"
-                    >
-                        <AccountCircle />
-                    </IconButton>
+                    <>
+                        <IconButton
+                            color="inherit"
+                            onClick={handleUserMenuOpen}
+                            aria-label="account of current user"
+                            aria-controls="menu-user"
+                            aria-haspopup="true"
+                        >
+                            <AccountCircle />
+                        </IconButton>
+                        <Menu
+                            id="menu-user"
+                            anchorEl={anchorElUser}
+                            open={Boolean(anchorElUser)}
+                            onClose={handleUserMenuClose}
+                        >
+                            <MenuItem onClick={handleProfile}>{t('header.myProfile') ?? "Mi perfil"}</MenuItem>
+                            <MenuItem onClick={handleLogout}>{t('header.logout') ?? "Cerrar sesión"}</MenuItem>
+                        </Menu>
+                    </>
                 ) : (                    
                     <>
-                        <Button color="inherit" onClick={() => navigate('/login')}>{t('header.login')}</Button>
-                        <Button color="inherit" onClick={() => navigate('/signin')}>{t('header.signUp')}</Button>
+                        <Button color="inherit" onClick={() => navigate('/app/login')}>{t('header.login')}</Button>
+                        <Button color="inherit" onClick={() => navigate('/app/signin')}>{t('header.signUp')}</Button>
                     </>
                 )}
             </Toolbar>
