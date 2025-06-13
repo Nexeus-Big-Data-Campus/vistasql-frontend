@@ -50,6 +50,7 @@ export default function Header() {
         navigate('/app/login');
     };
 
+
     return (
         <AppBar component="nav" position="relative">
             <Toolbar>
