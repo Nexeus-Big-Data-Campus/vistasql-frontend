@@ -31,7 +31,6 @@ export default function Header() {
         }
     };
 
-    // NUEVO: handlers para el menú de usuario
     const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorElUser(event.currentTarget);
     };
@@ -58,7 +57,7 @@ export default function Header() {
                     variant="h6" 
                     component="div" 
                     sx={{ flexGrow: 1, cursor: 'pointer' }} 
-                    onClick={() => navigate('/home')} 
+                    onClick={() => navigate('/')} 
                 >
                     {t('header.appName')}
                 </Typography>                
