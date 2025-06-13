@@ -13,7 +13,7 @@ let parser: Parser;
 // Initialize the tree-sitter parser
 Parser.init({
     locateFile(scriptName: string, scriptDirectory: string) {
-        return scriptName;
+        return '/' + scriptName;
       },
 }).then(async () => {
     console.log('Tree-sitter initialized');
