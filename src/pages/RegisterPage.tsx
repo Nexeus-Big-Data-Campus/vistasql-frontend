@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { ApiService } from "../services/ApiService";
 import { Link, useNavigate } from 'react-router';
 import { UserContext } from "../contexts/UserContext";
+import { useEffect } from "react";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -21,7 +22,7 @@ export default function RegisterPage() {
 };
   const { t } = useTranslation();
   const navigate = useNavigate(); 
-  const { login } = useContext(UserContext);
+  const { login,user } = useContext(UserContext);
   const apiService = new ApiService();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,8 +39,12 @@ export default function RegisterPage() {
     }
 
     login(token);
-    navigate('/editor');
+    navigate('/app/editor');
   };
+
+  useEffect(() => {
+    if (user) { navigate("/editor") }    
+  }, [user,navigate])
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flexBasis: 1 }}>
@@ -141,7 +146,7 @@ export default function RegisterPage() {
                 {message}
               </Alert>
             )}
-            <Link to="/login">
+            <Link to={'/app/login'}>
               <Button variant="text" color="secondary" sx={{ mt: 2, textTransform: "none" }} fullWidth>
                 {t('registerForm.loginButton')}
               </Button>

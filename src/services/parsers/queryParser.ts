@@ -3,9 +3,9 @@ import {Language, Node, Parser} from "web-tree-sitter";
 import { Join } from "../../interfaces/join";
 import { LexicalError } from "../../interfaces/error";
 import { Field, FieldOrigin, FieldReference, InvocationField } from "../../interfaces/field";
-import { getDirectChildByType, getNodeTypesInCurrentScope, findAllSubqueries } from "./utils";
+import { getDirectChildByType, getNodeTypesInCurrentScope, findAllSubqueries, generateHash } from "./utils";
 import { processColumn } from "./fieldParser";
-import { FromClause, Query, SelectClause, TableReference } from "../../interfaces/query";
+import { FromClause, Query, SelectClause, ObjectReference } from "../../interfaces/query";
 
 
 let parser: Parser;
@@ -13,7 +13,7 @@ let parser: Parser;
 // Initialize the tree-sitter parser
 Parser.init({
     locateFile(scriptName: string, scriptDirectory: string) {
-        return scriptName;
+        return '/' + scriptName;
       },
 }).then(async () => {
     console.log('Tree-sitter initialized');
@@ -39,26 +39,32 @@ export default function parseQuery(code: string): Query[] {
 
     const nodes: Query[] = [];
     const rootNode = tree.rootNode;
+    console.log(rootNode.toString())
 
-    const statements = getDirectChildByType(rootNode, 'statement');
-    statements.forEach((statement) => {
-        if(!statement) {
-            return;
-        }
+    try {
+        const statements = getDirectChildByType(rootNode, 'statement');
+        statements.forEach((statement) => {
+            if(!statement) {
+                return;
+            }
 
-        nodes.push(buildQueryNodeFromTree(statement, statement.type));
-    });
+            nodes.push(buildQueryNodeFromTree(statement, statement.type));
+        });   
+    } catch (e) {
+        console.error('The statement contains errors...', e);
+    }
 
     return nodes;
 }
 
-function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | null = null): any {
+function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | null = null, cteContext: Query[] = []): any {
     const ctes = rootNode.descendantsOfType('cte');    
-    const cte = processCte(ctes); 
+    const cte = processCte(ctes, cteContext); 
+    const cteLocalContext = [...cte, ...cteContext];
 
     const joins = getJoins(rootNode);
-    const fromClause = parseFromClause(rootNode, cte);
-    const selectClause = parseSelectClause(rootNode, cte, fromClause.references, joins);
+    const fromClause = parseFromClause(rootNode, cteLocalContext);
+    const selectClause = parseSelectClause(rootNode, fromClause.references, joins);
     const errors = getQueryErrors(rootNode);
 
     return {
@@ -76,14 +82,15 @@ function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | nul
     };
 }
 
-function parseFromClause(rootNode: Node, cte: Query[]): FromClause {
+function parseFromClause(rootNode: Node, ctes: Query[]): FromClause {
     const formClause = getNodeTypesInCurrentScope(rootNode, 'from');
+
     return {
-        references: getFromReferences(formClause[0], cte)
+        references: getFromReferences(formClause[0], ctes)
     };
 }
 
-function parseSelectClause(rootNode: Node, cte: Query[], tableReferences: TableReference[], joins: Join[]): SelectClause {
+function parseSelectClause(rootNode: Node, tableReferences: ObjectReference[], joins: Join[]): SelectClause {
     const selectNode = getNodeTypesInCurrentScope(rootNode, 'select');
 
     if(!selectNode || selectNode.length === 0) {
@@ -95,53 +102,81 @@ function parseSelectClause(rootNode: Node, cte: Query[], tableReferences: TableR
         throw new Error('No select expression found');
     }
 
-    const fields = getSelectFields(selectExpression[0], tableReferences, joins, cte);
+    const fields = getSelectFields(selectExpression[0], tableReferences, joins);
     return {
         fields,
     }
 }
 
-function getFromReferences(node: Node, cte: Query[]): TableReference[] {
+function getFromReferences(node: Node, ctes: Query[]): ObjectReference[] {
     if(node.type !== 'from') {
         throw new Error('Node is not a from clause');
     }
 
     const relations = getDirectChildByType(node, 'relation');
-    const references: TableReference[] = [];
+    const references: ObjectReference[] = [];
 
     relations.forEach((relation) => {
         if(!relation) {
             return;
         }
 
-        const isSubquery = getDirectChildByType(relation, 'subquery').length > 0;
-        if(isSubquery) {
+        const reference = parseRelation(relation);
+
+        if(!reference) {
             return;
         }
 
-        const alias = relation.childForFieldName('alias')?.text ?? '';
-        const source = getNodeTypesInCurrentScope(relation, 'object_reference');
-        const name = source[0]?.text ?? '';
-
-        const id = murmur.murmur3(`${alias}-${name}` + Math.random() * 1000);
-
-        // Add reference alias to corresponding child
-        if (name && cte) {
-            cte.forEach((element: Query) => {
-                if(element.name === name) {
-                    element.alias = alias;
-                }    
-            });
-        }
-
-        references.push({
-            id,
-            alias,
-            name,
+        ctes.forEach(cte => {
+            if (reference.name === cte.name) {
+                reference.ref = cte;
+            }
         });
+
+        references.push(reference);
     });
 
     return references;
+}
+
+function parseRelation(relation: Node): ObjectReference | null {
+    const isSubquery = getDirectChildByType(relation, 'subquery').length > 0;
+    
+    // TODO: Add subquery support
+    if(isSubquery) {
+        return null;
+    }
+
+    const alias = relation.childForFieldName('alias')?.text ?? '';
+    const source = getNodeTypesInCurrentScope(relation, 'object_reference');
+    const quoted_ref = getDirectChildByType(source[0], 'quoted_object_reference');
+    const {database, schema, name} = quoted_ref.length > 0 ? parseObjectReference(quoted_ref[0].text) : parseObjectReference(source[0].text);
+    const id = generateHash(`${alias}-${name}`);
+
+    return {
+        id,
+        alias,
+        database,
+        schema,
+        name: name ?? '',
+    }
+}
+
+function parseObjectReference(objectRefText: string) {
+  const text = objectRefText.replaceAll('`', '');
+  const parts = text.split('.');
+
+  let database, schema, name;
+
+  if (parts.length === 3) {
+    [database, schema, name] = parts;
+  } else if (parts.length === 2) {
+    [schema, name] = parts;
+  } else if (parts.length === 1) {
+    [name] = parts;
+  }
+
+  return { database, schema, name };
 }
 
 function getQueryErrors(rootNode: Node): LexicalError[] {
@@ -154,7 +189,7 @@ function getQueryErrors(rootNode: Node): LexicalError[] {
         }));
 }
 
-function processCte(ctes: (Node | null)[]): Query[] {
+function processCte(ctes: (Node | null)[], cteContext: Query[]): Query[] {
     const cteNodes: Query[] = [];
     ctes.forEach(cte => {
         if(!cte) {
@@ -169,7 +204,7 @@ function processCte(ctes: (Node | null)[]): Query[] {
             return null;
         }
 
-        cteNodes.push(buildQueryNodeFromTree(statement[0], 'cte', name));
+        cteNodes.push(buildQueryNodeFromTree(statement[0], 'cte', name, [...cteNodes, ...cteContext]));
     })
 
     return cteNodes;
@@ -185,43 +220,44 @@ function getJoins(node: Node): Join[] {
             return;
         }
         
-        const relation = joinClause.descendantsOfType('relation');
+        const relationNodes = joinClause.descendantsOfType('relation');
         const predicate = joinClause.childForFieldName('predicate')?.text ?? '';
 
-        if(!relation || !relation[0]) {
+        if(!relationNodes || !relationNodes[0]) {
             return
         }
 
-        const source = getNodeTypesInCurrentScope(relation[0], 'object_reference');
+        const relation = relationNodes[0];
+        const source = parseRelation(relation);
 
-        if(!source || !source[0]) {
+        if(!source || !source) {
             return;
         }
 
-        const alias = relation[0].childForFieldName('alias')?.text ?? '';
-        const type = joinClause.text.split('JOIN')[0].toLowerCase().trim();
-        const id = murmur.murmur3(`${alias}-${source}`+ Math.random() * 1000);
+        const alias = relation.childForFieldName('alias')?.text ?? '';
+        const type = joinClause.text.split(/JOIN/gi)[0].toLowerCase().trim();
+        const id = generateHash(`${alias}-${source.name}`);
 
         joins.push({
             id,
             alias,
             type,
             predicate,
-            source: source[0].text,
+            source
         });
     });
 
     return joins;
 }
 
-function getSelectFields(selectExpression: Node | null, references: TableReference[], joins: Join[], cte: Query[]): Field[] {
+function getSelectFields(selectExpression: Node | null, references: ObjectReference[], joins: Join[]): Field[] {
     if (!selectExpression || selectExpression.type !== 'select_expression') {
         return [];
     }
 
     const terms = selectExpression?.namedChildren.filter((child: Node | null) => child?.type === 'term');
     let fields: Field[] = terms.filter((t: Node | null) => !!t)
-                                .map((t: Node) => processColumn(t, references, joins, cte))
+                                .map((t: Node) => processColumn(t, references, joins))
                                 .filter((f: Field | null) => !!f) as Field[];
 
     const hasAllSelector = fields.reduce((acum, field) => acum || field.isAllSelector, false);
@@ -229,30 +265,29 @@ function getSelectFields(selectExpression: Node | null, references: TableReferen
     if (hasAllSelector) {
         // Add the fields from the children referenced in the FROM clause
         references.forEach((reference) => {
-            const referenceChild = cte.filter((query) => query.name === reference.name);
-            referenceChild.forEach((c: Query) => {
-                fields = concatChildrenFields(c, fields);
-            });
+            if (reference.ref) {
+                fields = fields.concat(getChildrenFields(reference.ref));
+            }
         });
     }
 
     return fields;
 }
 
-function concatChildrenFields(node: Query, fields: Field[]): Field[] {
-    return fields.concat(
-        node.selectClause.fields
-            .filter((f) => !f.isAllSelector)
-            .map((f) => {
-                return {
-                    ...f,
-                   references: [{
+function getChildrenFields(node: Query): Field[] {
+    return node.selectClause.fields
+        .filter((f) => !f.isAllSelector)
+        .map((f) => {
+            f.isReferenced = true;
+            return {
+                ...f,
+                isReferenced: false,
+                references: [{
                     fieldId: f.id,
                     nodeId: node.id,
                     origin: FieldOrigin.CTE,
-                   }],
-                };
-            })
-    );
+                }],
+            };
+        });
 }
 

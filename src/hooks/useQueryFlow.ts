@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import dagre from '@dagrejs/dagre';
 import { XYPosition } from '@xyflow/react';
-import { Query, TableReference } from '../interfaces/query';
+import { Query, ObjectReference } from '../interfaces/query';
 import { Join } from '../interfaces/join';
 import { Field, FieldOrigin, FieldReference } from '../interfaces/field';
 
@@ -9,7 +9,7 @@ import { Field, FieldOrigin, FieldReference } from '../interfaces/field';
 export interface FlowNode {
     id: string;
     type: string;
-    data: Query | Join | TableReference;
+    data: Query | Join | ObjectReference;
     position: XYPosition;
     parent?: string;
     edgelLabel?: string;
@@ -24,7 +24,7 @@ const getNodeSize = (node: FlowNode): { width: number; height: number } => {
         case 'join':
             return { width: 200, height: 50 };
         case 'reference':
-            const reference = node.data as TableReference;
+            const reference = node.data as ObjectReference;
             return { width: reference.name.length * 7.5, height: 50 };
         default:
             return { width: 200, height: 50 };
@@ -59,7 +59,7 @@ const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
             edgelLabel: join.predicate,
         });
 
-        const reference = { name: join.source, alias: join.alias } as TableReference;
+        const reference = { name: join.source.name, alias: join.alias } as ObjectReference;
         treeNodes.push({
             id: `${id}-join-ref`,
             type: 'reference',
@@ -71,7 +71,7 @@ const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
     });
 
     const newReferences = node.fromClause.references.filter((ref) => {
-        return !node.cte.reduce((acum, child) => acum || child.name === ref.name, false);
+        return !ref.ref;
     });
 
     newReferences.forEach((reference) => {
@@ -140,7 +140,7 @@ export const useQueryFlow = (queryTree: Query[]) => {
                 field.references.forEach((ref: FieldReference, i: number) => {
                     const sourceHandle = ref.origin !== FieldOrigin.CTE ? 'source' : `${ref.fieldId}-source`;
                     const edge = {
-                        id: `${ref.fieldId}-${fieldId}`,
+                        id: `${ref.fieldId}-${fieldId}-${i}`,
                         source: `${ref.nodeId}`,
                         target: node.id,
                         sourceHandle: sourceHandle,
@@ -152,7 +152,7 @@ export const useQueryFlow = (queryTree: Query[]) => {
 
             joins.forEach((join: Join) => {
                 const edge = {
-                    id: `${node.id}-${join.id}`,
+                    id: `${join.source.id}-${join.id}`,
                     source: `${join.id}-join-ref`,
                     target: `${join.id}`,
                     sourceHandle: 'source',

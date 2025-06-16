@@ -1,9 +1,9 @@
 import { Handle, Position } from "@xyflow/react";
-import { TableReference } from "../../../interfaces/query";
+import { ObjectReference } from "../../../interfaces/query";
 
 
 interface Props {
-    data: TableReference;
+    data: ObjectReference;
 }   
 
 export default function ReferenceNode({ data }: Props) {

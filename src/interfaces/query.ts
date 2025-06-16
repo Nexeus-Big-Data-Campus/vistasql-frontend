@@ -26,13 +26,16 @@ export interface WhereClause {
 }
 
 export interface FromClause {
-    references: TableReference[];
+    references: ObjectReference[];
 }
 
-export interface TableReference {
+export interface ObjectReference {
     id: string;
+    database?: string;
+    schema?: string;
     name: string;
     alias: string;
+    ref?: Query;
 }
 
 export interface OrderByClause {
