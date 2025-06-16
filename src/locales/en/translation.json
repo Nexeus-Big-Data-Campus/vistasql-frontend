@@ -17,7 +17,9 @@
   },
   "form": {
     "emailLabel": "Email Address",
-    "passwordLabel": "Password"
+    "passwordLabel": "Password",
+    "emailInvalid": "Please enter a valid email.",
+    "passwordInvalid": "Password must be at least 8 characters long."
   },
   "registerForm": {
     "title": "Create Account",

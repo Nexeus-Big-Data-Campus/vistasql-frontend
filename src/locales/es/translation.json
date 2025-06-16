@@ -18,7 +18,9 @@
   },
   "form": {
     "emailLabel": "Dirección de Email",
-    "passwordLabel": "Contraseña"
+    "passwordLabel": "Contraseña",
+    "emailInvalid": "Por favor, introduce un email válido.",
+    "passwordInvalid": "La contraseña debe tener al menos 8 caracteres."
   },
   "registerForm": {
     "title": "Crear cuenta",
