@@ -1,6 +1,11 @@
 import { Node } from 'web-tree-sitter';
+import murmur from "murmurhash-js";
 
-export function getDirectChildByType(node: Node, type: string): (Node)[] {
+export function getDirectChildByType(node: Node | null, type: string): (Node)[] {
+    if (!node) {
+        return [];
+    }
+    
     return node.namedChildren.filter((child: Node) => child !== null && child?.type === type);
 }
 
@@ -25,4 +30,8 @@ export function getNodeTypesInCurrentScope(node: Node, type: string): Node[] {
 
 export function findAllSubqueries(node: Node): Node[] {
     return getNodeTypesInCurrentScope(node, 'subquery');
+}
+
+export function generateHash(text: string): string {
+    return murmur.murmur3(text + Math.random() * 1000)
 }
