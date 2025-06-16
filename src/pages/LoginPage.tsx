@@ -5,10 +5,8 @@ import { TextField, Button,Typography, Alert, CircularProgress,Paper } from "@mu
 import { useTranslation } from "react-i18next";
 import { ApiService } from "../services/ApiService";
 import ErrorIcon from "@mui/icons-material/Error";
-import { Link, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router';
 import { UserContext } from "../contexts/UserContext";
-import { useEffect } from "react";
-
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -37,9 +35,9 @@ export default function LoginPage() {
     navigate('/app/editor');
   };
 
-  useEffect(() => {
-    if (user) { navigate("/editor") }
-  }, [user,navigate])
+  if (user) {
+    return <Navigate to="/app/editor"></Navigate>
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>      

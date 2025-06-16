@@ -4,9 +4,8 @@ import Box from "@mui/material/Box";
 import { TextField, Button, Typography, Alert, CircularProgress, Paper } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { ApiService } from "../services/ApiService";
-import { Link, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router';
 import { UserContext } from "../contexts/UserContext";
-import { useEffect } from "react";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -42,9 +41,9 @@ export default function RegisterPage() {
     navigate('/app/editor');
   };
 
-  useEffect(() => {
-    if (user) { navigate("/editor") }    
-  }, [user,navigate])
+  if (user) {
+    return <Navigate to="/app/editor"></Navigate>
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flexBasis: 1 }}>

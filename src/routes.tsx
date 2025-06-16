@@ -15,6 +15,8 @@ const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { index: true, element: <Home /> },
+      { path: 'login', element: <LoginPage /> },
+      { path: 'signin', element: <RegisterPage /> },
     ],
   },
 
@@ -23,8 +25,6 @@ const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       { path: 'editor', element: <MainEditor /> },
-      { path: 'login', element: <LoginPage /> },
-      { path: 'signin', element: <RegisterPage /> },
       { path: 'profile', element: <>TODO</>}
     ],
   },

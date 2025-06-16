@@ -1,22 +1,18 @@
-import { Outlet, Navigate, useLocation } from "react-router";
+import { Outlet, Navigate, useLocation, useNavigate } from "react-router";
 import { UserProvider, useUser } from "../../contexts/UserContext";
 import Header from "../../components/Header";
 import { AppThemeProvider } from "../../theme/ThemeContext";
 
-function ProtectedApp() {
-  const { user } = useUser();
-  const location = useLocation();
+function VistaApp() {
+  const { user, loading } = useUser();
 
-  const publicPaths = [('/app/login'), ('/app/signin')];
-  const isPublicPath = publicPaths.includes(location.pathname);
+  if(loading) {
+    return;
+  }
 
-  //if (!user && !isPublicPath) {
-    //return <Navigate to="/app/login" replace state={{ from: location }} />;
-  //}
-
-  //if (user && isPublicPath) {
-    //return <Navigate to="/app/editor" replace state={{ from: location }} />;
-  //}
+  if(!user) {
+    return  <Navigate to="/login"/>;
+  }
 
   return (
     <div className="flex flex-col h-screen">
@@ -30,7 +26,7 @@ export default function AppLayout() {
   return (
     <AppThemeProvider>
       <UserProvider>
-        <ProtectedApp />
+        <VistaApp />
       </UserProvider>
     </AppThemeProvider>
   );
