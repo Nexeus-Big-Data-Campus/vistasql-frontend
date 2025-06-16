@@ -12,6 +12,9 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const isValidPassword = (password: string) => password.length >= 8;
   const isValidEmail = (email: string) => {
     // Expresión para validar email
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -28,6 +31,7 @@ export default function RegisterPage() {
 
     const data = await apiService.signin("", email, password);
     const token = data.access_token;
+    const [emailTouched, setEmailTouched] = useState(false);
 
     if (!token) {
       setMessage(t("Credenciales inválidas"));
@@ -82,7 +86,17 @@ export default function RegisterPage() {
                 type="email"
                 variant="outlined"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (!emailTouched) setEmailTouched(true);
+                }}
+                onBlur={() => setEmailTouched(true)}
+                error={emailTouched && !!email && !isValidEmail(email)}
+                helperText={
+                  emailTouched && !!email && !isValidEmail(email)
+                    ? t('form.emailInvalid')
+                    : ""
+                }
                 autoComplete="email"
                 required
                 fullWidth
@@ -92,7 +106,17 @@ export default function RegisterPage() {
                 type="password"
                 variant="outlined"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (!passwordTouched) setPasswordTouched(true);
+                }}
+                onBlur={() => setPasswordTouched(true)}
+                error={passwordTouched && !!password && !isValidPassword(password)}
+                helperText={
+                  passwordTouched && !!password && !isValidPassword(password)
+                    ? t('form.passwordInvalid')
+                    : ""
+                }
                 autoComplete="new-password"
                 required
                 fullWidth
