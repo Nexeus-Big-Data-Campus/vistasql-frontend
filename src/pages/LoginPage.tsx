@@ -1,11 +1,18 @@
 import { useContext, useState } from "react";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
-import { TextField, Button,Typography, Alert, CircularProgress,Paper } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Typography,
+  Alert,
+  CircularProgress,
+  Paper,
+} from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { ApiService } from "../services/ApiService";
 import ErrorIcon from "@mui/icons-material/Error";
-import { Link, Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate } from "react-router";
 import { UserContext } from "../contexts/UserContext";
 
 export default function LoginPage() {
@@ -13,8 +20,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, user} = useContext(UserContext);
-  
+  const { login, user } = useContext(UserContext);
+
   const { t } = useTranslation();
   const apiService = new ApiService();
   const navigate = useNavigate();
@@ -29,60 +36,65 @@ export default function LoginPage() {
 
     if (!token) {
       setMessage(t("Credenciales inválidas"));
-    };
+    }
 
     login(token);
-    navigate('/app/editor');
+    navigate("/app/editor");
   };
 
   if (user) {
-    return <Navigate to="/app/editor"></Navigate>
+    return <Navigate to="/app/editor"></Navigate>;
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column' }}>      
+    <Box sx={{ display: "flex", flexDirection: "column" }}>
       <Box
         sx={{
           flexGrow: 1,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center", 
-          py: { xs: 3, sm: 6 } 
+          justifyContent: "center",
+          py: { xs: 3, sm: 6 },
         }}
       >
         <Container component="main" maxWidth="sm">
           <Paper
             elevation={6}
             sx={{
-              p: { xs: 2, sm: 4 }, 
-              borderRadius: 3, 
-              maxWidth: 400, 
-              width: "100%", 
+              p: { xs: 2, sm: 4 },
+              borderRadius: 3,
+              maxWidth: 400,
+              width: "100%",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              boxShadow: "0 8px 32px rgba(25, 118, 210, 0.15)", 
+              boxShadow: "0 8px 32px rgba(25, 118, 210, 0.15)",
             }}
           >
-            <Typography variant="h4" component="h1" gutterBottom color="primary">
-              {t('loginForm.title')}
+            <Typography
+              variant="h4"
+              component="h1"
+              gutterBottom
+              color="primary"
+            >
+              {t("loginForm.title")}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {t('loginForm.subtitle')}
+              {t("loginForm.subtitle")}
             </Typography>
             <Box
               component="form"
               onSubmit={handleSubmit}
               sx={{
-                width: "100%", 
+                width: "100%",
                 display: "flex",
                 flexDirection: "column",
-                gap: 2, 
+                gap: 2,
               }}
             >
               <TextField
-                label={t('form.emailLabel')}
+                label={t("form.emailLabel")}
                 type="email"
                 variant="outlined"
                 value={email}
@@ -92,7 +104,7 @@ export default function LoginPage() {
                 fullWidth
               />
               <TextField
-                label={t('form.passwordLabel')}
+                label={t("form.passwordLabel")}
                 type="password"
                 variant="outlined"
                 value={password}
@@ -110,26 +122,43 @@ export default function LoginPage() {
                 disabled={isLoading}
                 sx={{ mt: 1, fontWeight: "bold", letterSpacing: 1 }}
               >
-                {isLoading ? <CircularProgress size={24} color="inherit" /> : t('loginForm.submitButton')}
+                {isLoading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  t("loginForm.submitButton")
+                )}
               </Button>
             </Box>
             {message && (
               <Alert
                 severity="error"
-                sx={{ width: "100%", mt: 2, display: "flex", alignItems: "center" }}
+                sx={{
+                  width: "100%",
+                  mt: 2,
+                  display: "flex",
+                  alignItems: "center",
+                }}
                 icon={<ErrorIcon fontSize="inherit" />}
               >
                 {message}
               </Alert>
             )}
-            <Link to='/app/signin'>
+            <Link to="/forgot-password">
+              <Button
+                variant="text"
+                color="secondary"
+                sx={{ mt: 2, textAlign: "center", display: "block" }}
+              ></Button>
+              ¿Has olvidado tu contraseña?
+            </Link>
+            <Link to="/app/signin">
               <Button
                 variant="text"
                 color="secondary"
                 sx={{ mt: 2, textTransform: "none" }}
                 fullWidth
               >
-                {t('loginForm.createAccountButton')}
+                {t("loginForm.createAccountButton")}
               </Button>
             </Link>
           </Paper>
