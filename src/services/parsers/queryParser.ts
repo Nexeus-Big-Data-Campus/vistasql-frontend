@@ -5,7 +5,7 @@ import { LexicalError } from "../../interfaces/error";
 import { Field, FieldOrigin, FieldReference, InvocationField } from "../../interfaces/field";
 import { getDirectChildByType, getNodeTypesInCurrentScope, findAllSubqueries, generateHash } from "./utils";
 import { processColumn } from "./fieldParser";
-import { FromClause, Query, SelectClause, ObjectReference } from "../../interfaces/query";
+import { FromClause, Query, SelectClause, ObjectReference, ObjectReferenceType } from "../../interfaces/query";
 
 
 let parser: Parser;
@@ -39,7 +39,7 @@ export default function parseQuery(code: string): Query[] {
 
     const nodes: Query[] = [];
     const rootNode = tree.rootNode;
-    console.log(rootNode.toString())
+    // console.log(rootNode.toString())
 
     try {
         const statements = getDirectChildByType(rootNode, 'statement');
@@ -57,7 +57,7 @@ export default function parseQuery(code: string): Query[] {
     return nodes;
 }
 
-function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | null = null, cteContext: Query[] = []): any {
+function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | null = null, cteContext: Query[] = []): Query {
     const ctes = rootNode.descendantsOfType('cte');    
     const cte = processCte(ctes, cteContext); 
     const cteLocalContext = [...cte, ...cteContext];
@@ -76,8 +76,8 @@ function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | nul
         joins,
         fromClause: fromClause,
         selectClause: selectClause,
-        whereClause: null,
-        orderByClause: null,
+        whereClause: undefined, //TODO
+        orderByClause: undefined, //TODO
         errors
     };
 }
@@ -109,7 +109,7 @@ function parseSelectClause(rootNode: Node, tableReferences: ObjectReference[], j
 }
 
 function getFromReferences(node: Node, ctes: Query[]): ObjectReference[] {
-    if(node.type !== 'from') {
+    if(!node || node.type !== 'from') {
         throw new Error('Node is not a from clause');
     }
 
@@ -140,13 +140,37 @@ function getFromReferences(node: Node, ctes: Query[]): ObjectReference[] {
 }
 
 function parseRelation(relation: Node): ObjectReference | null {
-    const isSubquery = getDirectChildByType(relation, 'subquery').length > 0;
-    
-    // TODO: Add subquery support
-    if(isSubquery) {
-        return null;
-    }
+    const relationChild = relation.firstChild;
 
+    if(!relationChild) {
+        return null;
+    }    
+    
+    const relationType = relationChild.type;
+
+    switch(relationType) {
+        case 'object_reference':
+            return getObjectRelationReference(relation);
+        case 'subquery':
+            return getSubqueryRelation(relationChild);
+        default:
+            return null; 
+    }
+}
+
+function getSubqueryRelation(relation: Node): ObjectReference {
+    const query = buildQueryNodeFromTree(relation, 'subquery');
+
+    return {
+        id: generateHash(query.code),
+        type: ObjectReferenceType.SUBQUERY,
+        name: query.name,
+        alias: query.name,
+        ref: query
+    }
+}
+
+function getObjectRelationReference(relation: Node): ObjectReference {
     const alias = relation.childForFieldName('alias')?.text ?? '';
     const source = getNodeTypesInCurrentScope(relation, 'object_reference');
     const quoted_ref = getDirectChildByType(source[0], 'quoted_object_reference');
@@ -158,6 +182,7 @@ function parseRelation(relation: Node): ObjectReference | null {
         alias,
         database,
         schema,
+        type: ObjectReferenceType.TABLE,
         name: name ?? '',
     }
 }

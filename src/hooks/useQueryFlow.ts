@@ -1,29 +1,43 @@
 import { useMemo } from 'react';
 import dagre from '@dagrejs/dagre';
 import { XYPosition } from '@xyflow/react';
-import { Query, ObjectReference } from '../interfaces/query';
+import { Query, ObjectReference, ObjectReferenceType } from '../interfaces/query';
 import { Join } from '../interfaces/join';
 import { Field, FieldOrigin, FieldReference } from '../interfaces/field';
 
 //TODO: MOVE TO INTERFACE FILE
+export enum FlowNodeType {
+    Query = 'query',
+    Join = 'join',
+    Reference = 'reference'
+}
+
 export interface FlowNode {
     id: string;
-    type: string;
+    type: FlowNodeType;
     data: Query | Join | ObjectReference;
     position: XYPosition;
     parent?: string;
     edgelLabel?: string;
 }
 
+export interface FlowEdge {
+    id: string,
+    source: string,
+    target: string,
+    sourceHandle: string,
+    targetHandle: string,
+}
+
 const getNodeSize = (node: FlowNode): { width: number; height: number } => {
     switch (node.type) {
-        case 'query':
+        case FlowNodeType.Query:
             const query = node.data as Query;
             const height = query.selectClause.fields.length * 15 + 60;
-            return { width: 200, height };
-        case 'join':
+            return { width: 250, height };
+        case FlowNodeType.Join:
             return { width: 200, height: 50 };
-        case 'reference':
+        case FlowNodeType.Reference:
             const reference = node.data as ObjectReference;
             return { width: reference.name.length * 7.5, height: 50 };
         default:
@@ -31,43 +45,71 @@ const getNodeSize = (node: FlowNode): { width: number; height: number } => {
     }
 };
 
-const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
-    const treeNodes: FlowNode[] = [];
-
-    // Add root node
-    treeNodes.push({
+const getQueryNode = (node: Query, parentHash?: string): FlowNode =>  {
+    return {
         id: `${node.id}`,
-        type: 'query',
+        type: FlowNodeType.Query,
         data: node,
         parent: parentHash,
         position: { x: 0, y: 0 },
         edgelLabel: node.alias ?? undefined
-    });
+    }
+}
+
+const getJoinNode = (join: Join, parentHash?: string): FlowNode => {
+    return {
+        id: `${join.id}`,
+        type: FlowNodeType.Join,
+        data: join,
+        parent: parentHash,
+        position: { x: 0, y: 0 },
+        edgelLabel: join.predicate,
+    }
+}
+
+const getJoinReferenceNode = (reference: ObjectReference, parentHash?: string): FlowNode => {
+    return {
+        id: `${parentHash}-join-ref`,
+        type: FlowNodeType.Reference,
+        data: reference,
+        parent: parentHash,
+        position: { x: 0, y: 0 },
+        edgelLabel: reference.alias,
+    }
+}
+
+const getTableNode = (reference: ObjectReference, parentHash?: string): FlowNode => {
+    return {
+        id: `${reference.id}`,
+        type: FlowNodeType.Reference,
+        data: reference,
+        parent: parentHash,
+        position: { x: 0, y: 0 },
+        edgelLabel: reference.alias,
+    }
+}
+
+const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
+    const treeNodes: FlowNode[] = [];
+
+    // Add root node
+    treeNodes.push(getQueryNode(node, parentHash));
 
     node.cte.forEach((child) => {
         treeNodes.push(...flattenQueryTree(child, `${node.id}`));
     });
 
     node.joins.forEach((join) => {
-        const id = `${join.id}`;
-        treeNodes.push({
-            id,
-            type: 'join',
-            data: join,
-            parent: `${node.id}`,
-            position: { x: 0, y: 0 },
-            edgelLabel: join.predicate,
-        });
+        treeNodes.push(getJoinNode(join, node.id));
 
-        const reference = { name: join.source.name, alias: join.alias } as ObjectReference;
-        treeNodes.push({
-            id: `${id}-join-ref`,
-            type: 'reference',
-            data: reference,
-            parent: id,
-            position: { x: 0, y: 0 },
-            edgelLabel: reference.alias,
-        });
+        switch (join.source.type) {
+            case ObjectReferenceType.SUBQUERY:
+                treeNodes.push(...flattenQueryTree(join.source.ref as Query));
+                break;
+            case ObjectReferenceType.TABLE:
+                treeNodes.push(getJoinReferenceNode(join.source, join.id));
+                break;
+        }
     });
 
     const newReferences = node.fromClause.references.filter((ref) => {
@@ -75,14 +117,7 @@ const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
     });
 
     newReferences.forEach((reference) => {
-        treeNodes.push({
-            id: `${reference.id}`,
-            type: 'reference',
-            data: reference,
-            parent: `${node.id}`,
-            position: { x: 0, y: 0 },
-            edgelLabel: reference.alias,
-        });
+        treeNodes.push(getTableNode(reference, node.id));
     });
 
     return treeNodes;
@@ -126,40 +161,95 @@ const buildLayout = (flowNodes: FlowNode[], edges: any[]): FlowNode[] => {
     return graphNodes;
 };
 
-export const useQueryFlow = (queryTree: Query[]) => {
-    
-    const getAllEdgesFromTree = (nodes: FlowNode[]) => {
-        return nodes.reduce((acc: any[], node) => {
-            // Eugh: ugly
-            const data = node.data as any;
-            const fields = 'selectClause' in data ? data.selectClause?.fields : [];
-            const joins = 'joins' in data ? data.joins : [];
+const getEdgesFromFields = (fields: Field[], node: FlowNode): FlowEdge[] => {
+    const edges: FlowEdge[] = [];
 
-            fields.forEach((field: Field) => {
-                const fieldId = field.id;
-                field.references.forEach((ref: FieldReference, i: number) => {
-                    const sourceHandle = ref.origin !== FieldOrigin.CTE ? 'source' : `${ref.fieldId}-source`;
-                    const edge = {
-                        id: `${ref.fieldId}-${fieldId}-${i}`,
-                        source: `${ref.nodeId}`,
-                        target: node.id,
-                        sourceHandle: sourceHandle,
-                        targetHandle: `${fieldId}-target`,
-                    };
-                    acc.push(edge);
+    fields.forEach((field: Field) => {
+        const fieldId = field.id;
+        field.references.forEach((ref: FieldReference, i: number) => {
+            const sourceHandle = ref.origin !== FieldOrigin.CTE ? 'source' : `${ref.fieldId}-source`;
+            const edge: FlowEdge = {
+                id: `${ref.fieldId}-${fieldId}-${i}`,
+                source: `${ref.nodeId}`,
+                target: node.id,
+                sourceHandle: sourceHandle,
+                targetHandle: `${fieldId}-target`,
+            };
+            edges.push(edge);
+        });
+    });
+
+    return edges;
+}
+
+const getEdgesFromJoins = (joins: Join[], node: FlowNode): FlowEdge[] => {
+    const edges: FlowEdge[] = [];
+
+    joins.forEach((join: Join) => {
+        const source = join.source;
+        if (source.type === ObjectReferenceType.TABLE) {
+            edges.push({
+                id: `${join.source.id}-${join.id}`,
+                source: `${join.id}-join-ref`,
+                target: `${join.id}`,
+                sourceHandle: 'source',
+                targetHandle: 'target',
+            });
+        } else if (source.type === ObjectReferenceType.SUBQUERY) {
+            source.ref?.selectClause.fields.forEach(field => {
+                edges.push({
+                    id: `${source.ref?.id}-${field.id}`,
+                    source: `${source.ref?.id}`,
+                    target: `${join.id}`,
+                    sourceHandle: `${field.id}-source`,
+                    targetHandle: `target`
                 });
             });
+        }
+    });
 
-            joins.forEach((join: Join) => {
-                const edge = {
-                    id: `${join.source.id}-${join.id}`,
-                    source: `${join.id}-join-ref`,
-                    target: `${join.id}`,
-                    sourceHandle: 'source',
-                    targetHandle: 'target',
-                };
-                acc.push(edge);
-            });
+    return edges;
+}
+
+const getEdgesFromQueryNode = (node: FlowNode): FlowEdge[] => {
+    const data = node.data as Query;
+    const fields = data.selectClause?.fields ?? [];
+    const joins = data.joins ?? [];
+    const edges: FlowEdge[] = [];
+    
+    edges.push(...getEdgesFromFields(fields, node));
+    edges.push(...getEdgesFromJoins(joins, node));
+    
+    return edges;
+}
+
+/* const getEdgesFromReferenceNode = (node: FlowNode): FlowEdge[] =>  {
+    const objectReference = node.data as ObjectReference;
+
+    console.log('REF', objectReference.type)
+
+    if(objectReference.type === ObjectReferenceType.TABLE) {
+        return [];
+    }
+
+    const edges: FlowEdge[] = [];
+
+    edges.push(...getEdgesFromFields(objectReference.ref?.selectClause.fields ?? [], node));
+    edges.push(...getEdgesFromJoins(objectReference.ref?.joins ?? [], node));
+
+    return edges;
+} */
+
+export const useQueryFlow = (queryTree: Query[]) => {
+    const getAllEdgesFromTree = (nodes: FlowNode[]) => {
+        return nodes.reduce((acc: FlowEdge[], node: FlowNode) => {
+            switch(node.type) {
+                case FlowNodeType.Query:
+                    acc.push(...getEdgesFromQueryNode(node));
+                    break;
+                default:
+                    break;
+            }
 
             return acc;
         }, []);

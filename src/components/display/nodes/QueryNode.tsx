@@ -97,7 +97,7 @@ export default function QueryNode({ data, resetHighlight }: Props) {
                         { field.references.length > 0 &&
                             <Handle type="target" position={Position.Left} id={`${field.id}-target`} />
                         }
-                        { field.isReferenced && 
+                        { field.isReferenced || // TODO: HIDE WHEN NOT REFERENCED AND NOT A SUBQUERY
                             <Handle type="source" position={Position.Right} id={`${field.id}-source`} />
                         }
                     </div>

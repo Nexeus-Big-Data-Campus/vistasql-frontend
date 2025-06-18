@@ -11,8 +11,8 @@ export interface Query {
     cte: Query[];
     fromClause: FromClause;
     selectClause: SelectClause;
-    whereClause: WhereClause;
-    orderByClause: OrderByClause;
+    whereClause?: WhereClause;
+    orderByClause?: OrderByClause;
     joins: Join[];
     errors: LexicalError[];
 }
@@ -35,9 +35,15 @@ export interface ObjectReference {
     schema?: string;
     name: string;
     alias: string;
+    type: ObjectReferenceType;
     ref?: Query;
 }
 
 export interface OrderByClause {
     fields: Field[];
+}
+
+export enum ObjectReferenceType {
+    TABLE,
+    SUBQUERY,
 }

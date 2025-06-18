@@ -1,3 +1,4 @@
+import { Query } from "web-tree-sitter";
 import { ObjectReference } from "./query";
 
 export interface Join {
