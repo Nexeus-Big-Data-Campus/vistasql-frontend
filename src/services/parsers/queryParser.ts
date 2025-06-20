@@ -3,7 +3,7 @@ import {Language, Node, Parser} from "web-tree-sitter";
 import { Join } from "../../interfaces/join";
 import { LexicalError } from "../../interfaces/error";
 import { Field, FieldOrigin, FieldReference, InvocationField } from "../../interfaces/field";
-import { getDirectChildByType, getNodeTypesInCurrentScope, findAllSubqueries, generateHash } from "./utils";
+import { getDirectChildByType, getNodeTypesInCurrentScope, findAllSubqueries, generateHash, parseObjectReference } from "./utils";
 import { processColumn } from "./fieldParser";
 import { FromClause, Query, SelectClause, ObjectReference, ObjectReferenceType } from "../../interfaces/query";
 
@@ -187,23 +187,6 @@ function getObjectRelationReference(relation: Node): ObjectReference {
     }
 }
 
-function parseObjectReference(objectRefText: string) {
-  const text = objectRefText.replaceAll('`', '');
-  const parts = text.split('.');
-
-  let database, schema, name;
-
-  if (parts.length === 3) {
-    [database, schema, name] = parts;
-  } else if (parts.length === 2) {
-    [schema, name] = parts;
-  } else if (parts.length === 1) {
-    [name] = parts;
-  }
-
-  return { database, schema, name };
-}
-
 function getQueryErrors(rootNode: Node): LexicalError[] {
     return rootNode
         .descendantsOfType('ERROR')
@@ -257,6 +240,10 @@ function getJoins(node: Node): Join[] {
 
         if(!source || !source) {
             return;
+        }
+
+        if (source.type === ObjectReferenceType.SUBQUERY) {
+            source.ref?.selectClause.fields.forEach(field => field.isReferenced = true);
         }
 
         const alias = relation.childForFieldName('alias')?.text ?? '';

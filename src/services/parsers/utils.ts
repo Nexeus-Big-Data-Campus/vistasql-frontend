@@ -35,3 +35,20 @@ export function findAllSubqueries(node: Node): Node[] {
 export function generateHash(text: string): string {
     return murmur.murmur3(text + Math.random() * 1000)
 }
+
+export function parseObjectReference(objectRefText: string) {
+    const text = objectRefText.replaceAll('`', '');
+    const parts = text.split('.');
+
+    let database, schema, name;
+
+    if (parts.length === 3) {
+    [database, schema, name] = parts;
+    } else if (parts.length === 2) {
+    [schema, name] = parts;
+    } else if (parts.length === 1) {
+    [name] = parts;
+    }
+
+    return { database, schema, name };
+}

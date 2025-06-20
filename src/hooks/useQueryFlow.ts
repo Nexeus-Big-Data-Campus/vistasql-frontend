@@ -67,7 +67,7 @@ const getJoinNode = (join: Join, parentHash?: string): FlowNode => {
     }
 }
 
-const getJoinReferenceNode = (reference: ObjectReference, parentHash?: string): FlowNode => {
+const getJoinReferenceTableNode = (reference: ObjectReference, parentHash?: string): FlowNode => {
     return {
         id: `${parentHash}-join-ref`,
         type: FlowNodeType.Reference,
@@ -75,6 +75,24 @@ const getJoinReferenceNode = (reference: ObjectReference, parentHash?: string): 
         parent: parentHash,
         position: { x: 0, y: 0 },
         edgelLabel: reference.alias,
+    }
+}
+
+const getJoinReferenceNode = (reference: ObjectReference, parentHash?: string): FlowNode[] => {
+    switch (reference.type) {
+        case ObjectReferenceType.SUBQUERY:
+            return getAllNodesFromTree(reference.ref as Query);
+        case ObjectReferenceType.TABLE:
+            return [getJoinReferenceTableNode(reference, parentHash)];
+    }
+}
+
+const getReferenceNode = (reference: ObjectReference, parentHash?: string): FlowNode[] => {
+    switch (reference.type) {
+        case ObjectReferenceType.SUBQUERY:
+            return getAllNodesFromTree(reference.ref as Query);
+        case ObjectReferenceType.TABLE:
+            return [getTableNode(reference, parentHash)];
     }
 }
 
@@ -89,35 +107,27 @@ const getTableNode = (reference: ObjectReference, parentHash?: string): FlowNode
     }
 }
 
-const flattenQueryTree = (node: Query, parentHash?: string): FlowNode[] => {
+const getAllNodesFromTree = (node: Query, parentHash?: string): FlowNode[] => {
     const treeNodes: FlowNode[] = [];
 
     // Add root node
     treeNodes.push(getQueryNode(node, parentHash));
 
     node.cte.forEach((child) => {
-        treeNodes.push(...flattenQueryTree(child, `${node.id}`));
+        treeNodes.push(...getAllNodesFromTree(child, `${node.id}`));
     });
 
     node.joins.forEach((join) => {
         treeNodes.push(getJoinNode(join, node.id));
-
-        switch (join.source.type) {
-            case ObjectReferenceType.SUBQUERY:
-                treeNodes.push(...flattenQueryTree(join.source.ref as Query));
-                break;
-            case ObjectReferenceType.TABLE:
-                treeNodes.push(getJoinReferenceNode(join.source, join.id));
-                break;
-        }
+        treeNodes.push(...getJoinReferenceNode(join.source, join.id));
     });
 
-    const newReferences = node.fromClause.references.filter((ref) => {
+    /* const newReferences = node.fromClause.references.filter((ref) => {
         return !ref.ref;
-    });
+    }); */
 
-    newReferences.forEach((reference) => {
-        treeNodes.push(getTableNode(reference, node.id));
+    node.fromClause.references.forEach((reference) => {
+        treeNodes.push(...getReferenceNode(reference, node.id));
     });
 
     return treeNodes;
@@ -223,23 +233,6 @@ const getEdgesFromQueryNode = (node: FlowNode): FlowEdge[] => {
     return edges;
 }
 
-/* const getEdgesFromReferenceNode = (node: FlowNode): FlowEdge[] =>  {
-    const objectReference = node.data as ObjectReference;
-
-    console.log('REF', objectReference.type)
-
-    if(objectReference.type === ObjectReferenceType.TABLE) {
-        return [];
-    }
-
-    const edges: FlowEdge[] = [];
-
-    edges.push(...getEdgesFromFields(objectReference.ref?.selectClause.fields ?? [], node));
-    edges.push(...getEdgesFromJoins(objectReference.ref?.joins ?? [], node));
-
-    return edges;
-} */
-
 export const useQueryFlow = (queryTree: Query[]) => {
     const getAllEdgesFromTree = (nodes: FlowNode[]) => {
         return nodes.reduce((acc: FlowEdge[], node: FlowNode) => {
@@ -260,7 +253,7 @@ export const useQueryFlow = (queryTree: Query[]) => {
             return [[], []];
         }
 
-        const allNodes = queryTree.map((node) => flattenQueryTree(node)).flat();
+        const allNodes = queryTree.map((node) => getAllNodesFromTree(node)).flat();
         const allEdges = getAllEdgesFromTree(allNodes);
         const graphNodes = buildLayout(allNodes, allEdges);
 

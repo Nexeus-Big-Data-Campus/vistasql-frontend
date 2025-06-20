@@ -1,5 +1,5 @@
 import { Node } from 'web-tree-sitter';
-import { generateHash, getDirectChildByType } from './utils';
+import { generateHash, getDirectChildByType, parseObjectReference } from './utils';
 import { Field, FieldOrigin, FieldReference, FieldType, InvocationField } from '../../interfaces/field';
 import { Join } from '../../interfaces/join';
 import { ObjectReference } from '../../interfaces/query';
@@ -141,11 +141,11 @@ function processField(term: Node, references: ObjectReference[], joins: Join[], 
     const id = generateHash(term.text);
     const termValue = term.childForFieldName('value');
 
-    const objectReference = termValue?.descendantsOfType('object_reference');
-    const objectReferenceName = objectReference && objectReference.length > 0 ? objectReference[0]?.childForFieldName('name')?.text: undefined;
+    const objectReference = termValue?.descendantsOfType('object_reference') ?? [];
+    const {database, schema, name} = parseObjectReference(objectReference[0]?.text ?? ''); 
 
     const fieldName = getDirectChildByType(termValue, 'identifier')[0]?.text;
-    const fieldReferences = findReferencesForField(id, objectReferenceName, fieldName, references, joins, alias ?? term.text);
+    const fieldReferences = findReferencesForField(id, schema, fieldName, references, joins, alias ?? term.text);
 
     return {
         id,
@@ -175,6 +175,10 @@ function findReferencesForField(fieldId: string, objectReferenceName: string | u
             fieldReferences.push(createFieldReference(fieldId, reference.id, FieldOrigin.REFERENCE));
         }
     });
+
+    if (fieldReferences.length > 0) {
+        return fieldReferences;
+    }
 
     joins.forEach(join => {
         if (objectReferenceName && (join.alias === objectReferenceName || join.source.name === objectReferenceName)) {
