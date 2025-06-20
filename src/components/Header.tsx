@@ -47,7 +47,7 @@ export default function Header() {
     const handleLogout = () => {
         handleUserMenuClose();
         if (logout) logout();
-        navigate('/app/login');
+        navigate('/login');
     };
 
 
@@ -108,8 +108,8 @@ export default function Header() {
                     </>
                 ) : (                    
                     <>
-                        <Button color="inherit" onClick={() => navigate('/app/login')}>{t('header.login')}</Button>
-                        <Button color="inherit" onClick={() => navigate('/app/signin')}>{t('header.signUp')}</Button>
+                        <Button color="inherit" onClick={() => navigate('/login')}>{t('header.login')}</Button>
+                        <Button color="inherit" onClick={() => navigate('/signin')}>{t('header.signUp')}</Button>
                     </>
                 )}
             </Toolbar>

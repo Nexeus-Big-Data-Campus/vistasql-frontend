@@ -1,6 +1,6 @@
 import { Node } from 'web-tree-sitter';
 import { generateHash, getDirectChildByType } from './utils';
-import { CastField, Field, FieldOrigin, FieldReference, FieldType, InvocationField } from '../../interfaces/field';
+import { Field, FieldOrigin, FieldReference, FieldType, InvocationField } from '../../interfaces/field';
 import { Join } from '../../interfaces/join';
 import { ObjectReference } from '../../interfaces/query';
 
@@ -19,9 +19,38 @@ export function processColumn(term: Node, references: ObjectReference[], joins: 
             return processCastField(term, references, joins, alias);
         case 'literal':
             return processLiteralField(term, alias);
+        case 'date_operation':
+            return processDateOperationField(term, references, joins, alias);
         default: 
             return null;
     }
+}
+
+function processDateOperationField(term: Node, references: ObjectReference[], joins: Join[], alias: string | undefined): InvocationField | null {
+    const dateOperationNode = getDirectChildByType(term, 'date_operation')[0];
+    const parameterNode = dateOperationNode?.childForFieldName('parameter');
+
+    if (!parameterNode) {
+        return null;
+    }
+
+    const parameter = parseInvocationParameter(parameterNode, alias, references, joins, FieldType.INVOCATION);
+    const parameterId = parameter?.id ?? '';
+    const invocationName = dateOperationNode.namedChildren[0]?.text ?? '';
+
+    return {
+        id: generateHash(term.text),
+        name: invocationName,
+        invocationName: invocationName,
+        alias: alias ?? invocationName,
+        isAllSelector: false,
+        isAmbiguous: false,
+        isReferenced: false,
+        parameters: [parameterId],
+        references: parameter?.references ?? [],
+        text: term.text,
+        type: FieldType.INVOCATION
+    };
 }
 
 function processLiteralField(term: Node, alias: string | undefined): Field {
@@ -38,10 +67,18 @@ function processLiteralField(term: Node, alias: string | undefined): Field {
     }
 }
 
-function processCastField(term: Node, references: ObjectReference[], joins: Join[], alias: string | undefined): CastField | null {
+function processCastField(term: Node, references: ObjectReference[], joins: Join[], alias: string | undefined): Field | null {
     const cast = term.childForFieldName('value')?.descendantsOfType('cast')[0];
     const parameter = cast?.childForFieldName('parameter');
 
+    if(!parameter) {
+        return null;
+    }
+
+    return parseInvocationParameter(parameter, alias, references, joins, FieldType.CAST);
+}
+
+function parseInvocationParameter(parameter: Node, alias: string | undefined, references: ObjectReference[], joins: Join[], fieldType: FieldType): Field | null {
     const fieldNode = parameter?.descendantsOfType('field');
     const field = fieldNode && fieldNode?.length > 0 && fieldNode[0] ? processField(fieldNode[0], references, joins, alias) : null;
 
@@ -50,15 +87,15 @@ function processCastField(term: Node, references: ObjectReference[], joins: Join
     }
 
     return {
-        id: generateHash(term.text),
+        id: generateHash(parameter.text),
         name: field.name,
-        text: term.text,
+        text: parameter.text,
         alias: alias ?? field.name,
         isAllSelector: false,
         isAmbiguous: field.isAmbiguous,
         isReferenced: false,
         references: field.references,
-        type: FieldType.CAST,
+        type: fieldType,
     };
 }
 

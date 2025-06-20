@@ -39,7 +39,7 @@ export default function parseQuery(code: string): Query[] {
 
     const nodes: Query[] = [];
     const rootNode = tree.rootNode;
-    // console.log(rootNode.toString())
+    console.log(rootNode.toString())
 
     try {
         const statements = getDirectChildByType(rootNode, 'statement');

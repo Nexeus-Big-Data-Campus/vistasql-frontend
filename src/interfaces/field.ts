@@ -15,10 +15,6 @@ export interface InvocationField extends Field {
     parameters: string[];
 }
 
-export interface CastField extends Field {
-    
-}
-
 export enum FieldOrigin {
     CTE = 'cte',
     JOIN = 'join',
