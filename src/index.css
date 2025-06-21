@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "styles/override_react_flow.css";
+@import "styles/editor.css";
 
 body, html, #root {
     height: 100%;

@@ -1,0 +1,17 @@
+#sql-editor {
+    .keyword {
+        color: blue;
+    }
+
+    .identifier {
+        color: rgb(8, 114, 184);
+    }
+
+    .string {
+        color: green;
+    }
+
+    .comment {
+        color: #888;
+    }
+}

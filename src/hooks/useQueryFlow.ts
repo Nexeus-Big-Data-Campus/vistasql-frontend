@@ -122,11 +122,11 @@ const getAllNodesFromTree = (node: Query, parentHash?: string): FlowNode[] => {
         treeNodes.push(...getJoinReferenceNode(join.source, join.id));
     });
 
-    /* const newReferences = node.fromClause.references.filter((ref) => {
-        return !ref.ref;
-    }); */
-
     node.fromClause.references.forEach((reference) => {
+        if (reference.ref) {
+            return;
+        }
+        
         treeNodes.push(...getReferenceNode(reference, node.id));
     });
 

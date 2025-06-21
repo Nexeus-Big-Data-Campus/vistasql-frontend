@@ -282,7 +282,7 @@ function getSelectFields(selectExpression: Node | null, references: ObjectRefere
             }
         });
     }
-
+    
     return fields;
 }
 
@@ -293,6 +293,7 @@ function getChildrenFields(node: Query): Field[] {
             f.isReferenced = true;
             return {
                 ...f,
+                id: generateHash(f.text),
                 isReferenced: false,
                 references: [{
                     fieldId: f.id,

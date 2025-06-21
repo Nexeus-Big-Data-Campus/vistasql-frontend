@@ -17,10 +17,6 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
     const CODE_DEBOUNCE_TIME = 350;
 
-    const SQL_PATTERNS = [
-        { regex: /\b(SELECT|FROM|WHERE|ORDER BY|WITH|AS|LIKE|LEFT|RIGHT|OUTTER|INNER|JOIN)\b/gi, className: "text-indigo-600" },
-    ];
-
     const TEXTAREA_ID = 'sql-editor-textarea';
 
     const QUERY_STORAGE_KEY = 'sqlEditorQuery'; 
@@ -51,15 +47,6 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
     const highlightQueries = (code: string) => {
         let highlightedCode = highlight(code, languages.sql, 'sql');
-        
-        // Add a custom class to all keywords found in the code
-        SQL_PATTERNS.forEach(({ regex, className }) => {
-            highlightedCode = highlightedCode.replace(
-                regex,
-                (match: string) => `<span class="${className}">${match}</span>`
-            );
-        });
-
         return highlightedCode;
     }
 
@@ -71,12 +58,13 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
     }
 
     return (
-        <div id="editor-container" className="h-full border-primary">
+        <div id="editor-container" className="w-full h-full max-h-full flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-auto">
             <Editor
             id="sql-editor"
             textareaId={TEXTAREA_ID}
             className="inset-shadow-sm inset-shadow-gray-400 min-h-full"
-            textareaClassName="!focus:border-1 !rounded-0"
+            textareaClassName="!focus:border-1 !rounded-0 min-h-full"
             value={code}
             onValueChange={setCode}
             highlight={highlightQueries}
@@ -85,7 +73,8 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
                 fontFamily: '"Fira code", "Fira Mono", monospace',
                 fontSize: 14,
             }}
-        />
+            />
         </div>
+    </div>
     );
 }
