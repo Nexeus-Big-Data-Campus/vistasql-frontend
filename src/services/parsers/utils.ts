@@ -36,18 +36,18 @@ export function generateHash(text: string): string {
     return murmur.murmur3(text + Math.random() * 1000)
 }
 
-export function parseObjectReference(objectRefText: string) {
+export function parseObjectReference(objectRefText: string): {database: string, schema: string, name: string} {
     const text = objectRefText.replaceAll('`', '');
     const parts = text.split('.');
 
-    let database, schema, name;
+    let database = '', schema = '', name = '';
 
     if (parts.length === 3) {
-    [database, schema, name] = parts;
+        [database, schema, name] = parts;
     } else if (parts.length === 2) {
-    [schema, name] = parts;
+        [schema, name] = parts;
     } else if (parts.length === 1) {
-    [name] = parts;
+        [name] = parts;
     }
 
     return { database, schema, name };

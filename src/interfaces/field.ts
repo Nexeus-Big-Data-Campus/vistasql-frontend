@@ -1,10 +1,11 @@
+import { ObjectReference } from "./query";
+
 export interface Field {
     id: string;
     text: string;
     name: string;
     alias: string;
     references: FieldReference[];
-    isAllSelector: boolean;
     isAmbiguous: boolean;
     isReferenced: boolean;
     type: FieldType;
@@ -13,6 +14,11 @@ export interface Field {
 export interface InvocationField extends Field {
     invocationName: string;
     parameters: string[];
+}
+
+export interface AllSelectorField extends Field {
+    exceptFields: Field[],
+    selectFrom: ObjectReference | null
 }
 
 export enum FieldOrigin {

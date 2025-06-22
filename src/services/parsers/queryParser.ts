@@ -2,7 +2,7 @@ import murmur from "murmurhash-js";
 import {Language, Node, Parser} from "web-tree-sitter";
 import { Join } from "../../interfaces/join";
 import { LexicalError } from "../../interfaces/error";
-import { Field, FieldOrigin, FieldReference, InvocationField } from "../../interfaces/field";
+import { AllSelectorField, Field, FieldOrigin, FieldReference, FieldType, InvocationField } from "../../interfaces/field";
 import { getDirectChildByType, getNodeTypesInCurrentScope, findAllSubqueries, generateHash, parseObjectReference } from "./utils";
 import { processColumn } from "./fieldParser";
 import { FromClause, Query, SelectClause, ObjectReference, ObjectReferenceType } from "../../interfaces/query";
@@ -171,15 +171,15 @@ function getSubqueryRelation(relation: Node): ObjectReference {
 }
 
 function getObjectRelationReference(relation: Node): ObjectReference {
-    const alias = relation.childForFieldName('alias')?.text ?? '';
     const source = getNodeTypesInCurrentScope(relation, 'object_reference');
     const quoted_ref = getDirectChildByType(source[0], 'quoted_object_reference');
     const {database, schema, name} = quoted_ref.length > 0 ? parseObjectReference(quoted_ref[0].text) : parseObjectReference(source[0].text);
+    const alias = relation.childForFieldName('alias')?.text ?? name;
     const id = generateHash(`${alias}-${name}`);
 
     return {
         id,
-        alias,
+        alias: alias ?? '',
         database,
         schema,
         type: ObjectReferenceType.TABLE,
@@ -272,23 +272,35 @@ function getSelectFields(selectExpression: Node | null, references: ObjectRefere
                                 .map((t: Node) => processColumn(t, references, joins))
                                 .filter((f: Field | null) => !!f) as Field[];
 
-    const hasAllSelector = fields.reduce((acum, field) => acum || field.isAllSelector, false);
-
-    if (hasAllSelector) {
-        // Add the fields from the children referenced in the FROM clause
-        references.forEach((reference) => {
-            if (reference.ref) {
-                fields = fields.concat(getChildrenFields(reference.ref));
-            }
-        });
-    }
+    const allSelectorFields = fields.filter((field) => field.type === FieldType.ALL_SELECTOR);
+    allSelectorFields.forEach(selector => {
+       fields.push(...getAllSelectorFields(selector, references)); 
+    });
     
     return fields;
 }
 
-function getChildrenFields(node: Query): Field[] {
+function getAllSelectorFields(field: Field, references: ObjectReference[]): Field[] {
+    if (field.type !== FieldType.ALL_SELECTOR) {
+        return [];
+    }
+
+    const allSelectorField = field as AllSelectorField;
+    const fields: Field[] = [];
+
+    references.forEach(reference => {
+        if (reference.ref && (!allSelectorField.selectFrom || allSelectorField.selectFrom.name === reference.name)) {
+            fields.push(...getChildrenFields(reference.ref, allSelectorField.exceptFields));
+        }
+    });
+
+    return fields;
+}
+
+function getChildrenFields(node: Query, exceptFields: Field[]): Field[] {
     return node.selectClause.fields
-        .filter((f) => !f.isAllSelector)
+        .filter((f) => f.type !== FieldType.ALL_SELECTOR)
+        .filter(f => !exceptFields.some(ef => ef.name === f.name && (ef.references.length === 0 || ef.references.some(r => r.nodeId === node.id))))
         .map((f) => {
             f.isReferenced = true;
             return {

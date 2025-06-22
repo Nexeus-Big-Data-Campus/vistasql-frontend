@@ -1,8 +1,8 @@
 import { Node } from 'web-tree-sitter';
 import { generateHash, getDirectChildByType, parseObjectReference } from './utils';
-import { Field, FieldOrigin, FieldReference, FieldType, InvocationField } from '../../interfaces/field';
+import { AllSelectorField, Field, FieldOrigin, FieldReference, FieldType, InvocationField } from '../../interfaces/field';
 import { Join } from '../../interfaces/join';
-import { ObjectReference } from '../../interfaces/query';
+import { ObjectReference, ObjectReferenceType } from '../../interfaces/query';
 
 export function processColumn(term: Node, references: ObjectReference[], joins: Join[]): Field | null {
     const alias = term?.childForFieldName('alias')?.text;
@@ -10,7 +10,7 @@ export function processColumn(term: Node, references: ObjectReference[], joins: 
 
     switch (value) {
         case 'all_fields':
-            return processAllFieldsSelector(references, joins);
+            return processAllFieldsSelector(term, references, joins);
         case 'field':
             return processField(term, references, joins, alias);
         case 'invocation':
@@ -43,7 +43,6 @@ function processDateOperationField(term: Node, references: ObjectReference[], jo
         name: invocationName,
         invocationName: invocationName,
         alias: alias ?? invocationName,
-        isAllSelector: false,
         isAmbiguous: false,
         isReferenced: false,
         parameters: [parameterId],
@@ -59,7 +58,6 @@ function processLiteralField(term: Node, alias: string | undefined): Field {
         name: '',
         text: term.text,
         alias: alias ?? term.text,
-        isAllSelector: false,
         isAmbiguous: false,
         isReferenced: false,
         references: [],
@@ -91,7 +89,6 @@ function parseInvocationParameter(parameter: Node, alias: string | undefined, re
         name: field.name,
         text: parameter.text,
         alias: alias ?? field.name,
-        isAllSelector: false,
         isAmbiguous: field.isAmbiguous,
         isReferenced: false,
         references: field.references,
@@ -99,18 +96,44 @@ function parseInvocationParameter(parameter: Node, alias: string | undefined, re
     };
 }
 
-function processAllFieldsSelector(references: ObjectReference[], joins: Join[]): Field {
+function processAllFieldsSelector(term: Node, references: ObjectReference[], joins: Join[]): AllSelectorField {
     const id = generateHash('all_fields');
+    const allFieldsNode = term.childForFieldName('value');
+    const objectReferenceNode =  getDirectChildByType(allFieldsNode, 'object_reference');
+    const exceptNode = getDirectChildByType(allFieldsNode, 'except_statement');
+    let selectFrom: ObjectReference | null = null;
+    let exceptFields: Field[] = [];
+
+    if(objectReferenceNode.length > 0 && objectReferenceNode[0]) {
+        const {database, schema, name} = parseObjectReference(objectReferenceNode[0].text);
+        selectFrom = {
+            id: generateHash(objectReferenceNode[0].text),
+            database,
+            schema,
+            name: name ?? '',
+            alias: name ?? '',
+            type: ObjectReferenceType.TABLE
+        };
+    }
+
+    if (exceptNode && exceptNode[0]) {
+        const terms = getDirectChildByType(exceptNode[0], 'term');
+        exceptFields = terms.map(t => processColumn(t, references, joins)).filter(f => !!f);
+    }
+
+    const name = !selectFrom ? '*' : `${selectFrom.name}.*`; 
+
     return {
         id,
-        name: '*',
-        text: '*',
-        alias: '*',
-        isAllSelector: true,
+        name,
+        text: term.text,
+        alias: name,
         isAmbiguous: false,
         isReferenced: false,
         references: getFromClauseAndJoinsReferences(id, references, joins),
         type: FieldType.ALL_SELECTOR,
+        selectFrom,
+        exceptFields
     };
 }   
 
@@ -127,7 +150,6 @@ function processInvocationField(term: Node, references: ObjectReference[], joins
         name: term.text,
         text: term.text,
         alias: alias ?? term.text,
-        isAllSelector: false,
         invocationName,
         references: fieldReferences,
         parameters: parameters.map((p) => p.text),
@@ -142,17 +164,15 @@ function processField(term: Node, references: ObjectReference[], joins: Join[], 
     const termValue = term.childForFieldName('value');
 
     const objectReference = termValue?.descendantsOfType('object_reference') ?? [];
-    const {database, schema, name} = parseObjectReference(objectReference[0]?.text ?? ''); 
-
+    const { name } = parseObjectReference(objectReference[0]?.text ?? ''); 
     const fieldName = getDirectChildByType(termValue, 'identifier')[0]?.text;
-    const fieldReferences = findReferencesForField(id, schema, fieldName, references, joins, alias ?? term.text);
+    const fieldReferences = findReferencesForField(id, name, fieldName, references, joins, alias ?? term.text);
 
     return {
         id,
         name: fieldName ?? term.text,
         text: term.text,
         alias: alias ?? term.text,
-        isAllSelector: false,
         references: fieldReferences,
         isAmbiguous: fieldReferences.length > 1,
         isReferenced: false,
@@ -160,7 +180,7 @@ function processField(term: Node, references: ObjectReference[], joins: Join[], 
     }
 }
 
-function findReferencesForField(fieldId: string, objectReferenceName: string | undefined, fieldName: string, objectReferences: ObjectReference[], joins: Join[], alias: string | undefined): FieldReference[] {
+function findReferencesForField(fieldId: string, objectReferenceName: string, fieldName: string, objectReferences: ObjectReference[], joins: Join[], alias: string | undefined): FieldReference[] {
     let fieldReferences: FieldReference[] = [];
 
     objectReferences.forEach(reference => {
