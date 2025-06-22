@@ -130,6 +130,11 @@ const getAllNodesFromTree = (node: Query, parentHash?: string): FlowNode[] => {
         treeNodes.push(...getReferenceNode(reference, node.id));
     });
 
+    // Add UNION clause nodes
+    if (node.unionClause) {
+        treeNodes.push(...getAllNodesFromTree(node.unionClause.query, `${node.id}-union`));
+    }
+
     return treeNodes;
 };
 
@@ -221,14 +226,34 @@ const getEdgesFromJoins = (joins: Join[], node: FlowNode): FlowEdge[] => {
     return edges;
 }
 
+const getEdgesFromUnion = (unionClause: any, node: FlowNode): FlowEdge[] => {
+    const edges: FlowEdge[] = [];
+    
+    if (!unionClause || !unionClause.query) {
+        return edges;
+    }
+
+    edges.push({
+        id: `${node.id}-union-${unionClause.query.id}`,
+        source: node.id,
+        target: unionClause.query.id,
+        sourceHandle: 'union-source',
+        targetHandle: 'union-target',
+    });
+
+    return edges;
+}
+
 const getEdgesFromQueryNode = (node: FlowNode): FlowEdge[] => {
     const data = node.data as Query;
     const fields = data.selectClause?.fields ?? [];
     const joins = data.joins ?? [];
+    const unionClause = data.unionClause;
     const edges: FlowEdge[] = [];
     
     edges.push(...getEdgesFromFields(fields, node));
     edges.push(...getEdgesFromJoins(joins, node));
+    edges.push(...getEdgesFromUnion(unionClause, node));
     
     return edges;
 }

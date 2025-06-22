@@ -20,7 +20,7 @@ interface Props {
 }
 
 export default function QueryNode({ data, resetHighlight }: Props) {
-    const { id, name, selectClause, type } = data;
+    const { id, name, selectClause, type, unionClause } = data;
     const { setEdges } = useReactFlow();
 
     const onFieldClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, field: Field, index: number) => {
@@ -77,6 +77,11 @@ export default function QueryNode({ data, resetHighlight }: Props) {
 
     return (
         <div className="rounded-t-xs overflow-visible border-1 bg-gray-900">
+            {/* UNION target handle */}
+            {unionClause && (
+                <Handle type="target" position={Position.Top} id="union-target" />
+            )}
+            
             <header className='py-1 px-2 bg-gray-900 flex items-center justify-between'>
                 <span className='text-lg text-white'>{name}</span>
                 <TypeLabel type={type}></TypeLabel>
@@ -103,6 +108,14 @@ export default function QueryNode({ data, resetHighlight }: Props) {
                         }
                     </div>
                 ))}
+                
+                {/* UNION clause indicator */}
+                {unionClause && (
+                    <div className="text-xs p-1 border-b border-gray-300 bg-blue-50 flex justify-between items-center relative overflow-visible">
+                        <span className="text-blue-600 font-medium">{unionClause.type}</span>
+                        <Handle type="source" position={Position.Right} id="union-source" />
+                    </div>
+                )}
             </section>
         </div>
     );

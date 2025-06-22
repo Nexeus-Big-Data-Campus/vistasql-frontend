@@ -5,7 +5,7 @@ import { LexicalError } from "../../interfaces/error";
 import { Field, FieldOrigin, FieldReference, InvocationField } from "../../interfaces/field";
 import { getDirectChildByType, getNodeTypesInCurrentScope, findAllSubqueries, generateHash, parseObjectReference } from "./utils";
 import { processColumn } from "./fieldParser";
-import { FromClause, Query, SelectClause, ObjectReference, ObjectReferenceType } from "../../interfaces/query";
+import { FromClause, Query, SelectClause, ObjectReference, ObjectReferenceType, UnionClause } from "../../interfaces/query";
 
 
 let parser: Parser;
@@ -65,6 +65,7 @@ function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | nul
     const joins = getJoins(rootNode);
     const fromClause = parseFromClause(rootNode, cteLocalContext);
     const selectClause = parseSelectClause(rootNode, fromClause.references, joins);
+    const unionClause = parseUnionClause(rootNode, cteLocalContext);
     const errors = getQueryErrors(rootNode);
 
     return {
@@ -78,6 +79,7 @@ function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | nul
         selectClause: selectClause,
         whereClause: undefined, //TODO
         orderByClause: undefined, //TODO
+        unionClause,
         errors
     };
 }
@@ -302,5 +304,31 @@ function getChildrenFields(node: Query): Field[] {
                 }],
             };
         });
+}
+
+function parseUnionClause(rootNode: Node, cteContext: Query[]): UnionClause | undefined {
+    const unionNodes = rootNode.descendantsOfType('union');
+    
+    if (!unionNodes || unionNodes.length === 0) {
+        return undefined;
+    }
+
+    const unionNode = unionNodes[0];
+    
+    const unionText = unionNode.text.toUpperCase();
+    const unionType = unionText.includes('UNION ALL') ? 'UNION ALL' : 'UNION';
+    
+    const unionStatement = unionNode.descendantsOfType('statement');
+    
+    if (!unionStatement || unionStatement.length === 0) {
+        return undefined;
+    }
+    
+    const unionQuery = buildQueryNodeFromTree(unionStatement[0], 'union_query', null, cteContext);
+    
+    return {
+        type: unionType as 'UNION' | 'UNION ALL',
+        query: unionQuery
+    };
 }
 

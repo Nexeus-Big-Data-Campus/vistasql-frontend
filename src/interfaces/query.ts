@@ -13,6 +13,7 @@ export interface Query {
     selectClause: SelectClause;
     whereClause?: WhereClause;
     orderByClause?: OrderByClause;
+    unionClause?: UnionClause;
     joins: Join[];
     errors: LexicalError[];
 }
@@ -41,6 +42,11 @@ export interface ObjectReference {
 
 export interface OrderByClause {
     fields: Field[];
+}
+
+export interface UnionClause {
+    type: 'UNION' | 'UNION ALL';
+    query: Query;
 }
 
 export enum ObjectReferenceType {
