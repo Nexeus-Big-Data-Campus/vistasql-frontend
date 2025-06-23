@@ -324,6 +324,9 @@ function parseUnionClause(rootNode: Node, cteContext: Query[]): UnionClause | un
         return undefined;
     }
     
+    if (!unionStatement[0]) {
+        return undefined;
+    }
     const unionQuery = buildQueryNodeFromTree(unionStatement[0], 'union_query', null, cteContext);
     
     return {
