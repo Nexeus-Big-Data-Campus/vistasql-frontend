@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import dagre from '@dagrejs/dagre';
-import { XYPosition } from '@xyflow/react';
+import { EdgeMarker, MarkerType, XYPosition } from '@xyflow/react';
 import { Query, ObjectReference, ObjectReferenceType } from '../interfaces/query';
 import { Join } from '../interfaces/join';
 import { Field, FieldOrigin, FieldReference } from '../interfaces/field';
@@ -27,19 +27,35 @@ export interface FlowEdge {
     target: string,
     sourceHandle: string,
     targetHandle: string,
+    markerEnd: EdgeMarker
+}
+
+export const ARROW_MARKER: EdgeMarker = {
+    type: MarkerType.Arrow,
+    width: 10,
+    height: 10,
+    strokeWidth: 2
+}
+
+export const ARROW_MARKER_HIGHLIGHT: EdgeMarker = {
+    type: MarkerType.Arrow,
+    width: 7,
+    height: 7,
+    strokeWidth: 2,
+    color: '#1976d2',
 }
 
 const getNodeSize = (node: FlowNode): { width: number; height: number } => {
     switch (node.type) {
         case FlowNodeType.Query:
             const query = node.data as Query;
-            const height = query.selectClause.fields.length * 15 + 60;
+            const height = (query.selectClause.fields.length * 40) + 60;
             return { width: 250, height };
         case FlowNodeType.Join:
-            return { width: 200, height: 50 };
+            return { width: 80, height: 50 };
         case FlowNodeType.Reference:
             const reference = node.data as ObjectReference;
-            return { width: reference.name.length * 7.5, height: 50 };
+            return { width: (reference.name.length * 16) + 20 + 30, height: 50 };
         default:
             return { width: 200, height: 50 };
     }
@@ -184,6 +200,7 @@ const getEdgesFromFields = (fields: Field[], node: FlowNode): FlowEdge[] => {
                 target: node.id,
                 sourceHandle: sourceHandle,
                 targetHandle: `${fieldId}-target`,
+                markerEnd: ARROW_MARKER
             };
             edges.push(edge);
         });
@@ -204,6 +221,7 @@ const getEdgesFromJoins = (joins: Join[], node: FlowNode): FlowEdge[] => {
                 target: `${join.id}`,
                 sourceHandle: 'source',
                 targetHandle: 'target',
+                markerEnd: ARROW_MARKER
             });
         } else if (source.type === ObjectReferenceType.SUBQUERY) {
             source.ref?.selectClause.fields.forEach(field => {
@@ -212,7 +230,8 @@ const getEdgesFromJoins = (joins: Join[], node: FlowNode): FlowEdge[] => {
                     source: `${source.ref?.id}`,
                     target: `${join.id}`,
                     sourceHandle: `${field.id}-source`,
-                    targetHandle: `target`
+                    targetHandle: `target`,
+                    markerEnd: ARROW_MARKER
                 });
             });
         }

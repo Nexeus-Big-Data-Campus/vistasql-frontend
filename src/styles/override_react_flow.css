@@ -1,7 +1,15 @@
 
+.react-flow {
+    --xy-handle-background-color: #777;
+    --xy-handle-background-color-default: #777;
+}
+
 .react-flow__handle  {
-    width: 2px !important;
-    height: 2px !important;
+    min-width: 2px !important;
+    min-height: 2px !important;
+    width: 4px !important;
+    height: 4px !important;
     border: none !important;
+    z-index: -1;
 }
 

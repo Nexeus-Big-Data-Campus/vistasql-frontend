@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
 import "prismjs/components/prism-sql";
@@ -47,7 +47,11 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
     const highlightQueries = (code: string) => {
         let highlightedCode = highlight(code, languages.sql, 'sql');
-        return highlightedCode;
+
+        return highlightedCode
+                .split("\n")
+                .map((line, i) => `<span class='editorLineNumber'>${i + 1}</span>${line}`)
+                .join("\n");
     }
 
     const updateQueryTree = (code: string) => {
@@ -58,23 +62,23 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
     }
 
     return (
-        <div id="editor-container" className="w-full h-full max-h-full flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto">
-            <Editor
-            id="sql-editor"
-            textareaId={TEXTAREA_ID}
-            className="inset-shadow-sm inset-shadow-gray-400 min-h-full"
-            textareaClassName="!focus:border-1 !rounded-0 min-h-full"
-            value={code}
-            onValueChange={setCode}
-            highlight={highlightQueries}
-            padding={10}
-            style={{
-                fontFamily: '"Fira code", "Fira Mono", monospace',
-                fontSize: 14,
-            }}
-            />
+        <div id="editor-container" className="w-full h-full max-h-full flex overflow-hidden">
+            <div className="flex-1 overflow-auto">
+                <Editor
+                    id="sql-editor"
+                    textareaId={TEXTAREA_ID}
+                    className="inset-shadow-sm min-h-full bg-white "
+                    textareaClassName="!focus:border-1 !rounded-0 min-h-full"
+                    value={code}
+                    onValueChange={setCode}
+                    highlight={highlightQueries}
+                    padding={10}
+                    style={{
+                        fontFamily: '"Roboto Mono Variable", "Fira Mono", monospace',
+                        fontSize: 14,
+                    }}
+                />
+            </div>
         </div>
-    </div>
     );
 }

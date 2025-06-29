@@ -2,7 +2,19 @@
 @import "styles/override_react_flow.css";
 @import "styles/editor.css";
 
+@font-face {
+  font-family: 'Roboto Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 700;
+  src: url(@fontsource-variable/roboto-mono/files/roboto-mono-latin-wght-normal.woff2) format('woff2-variations');
+}
+
 body, html, #root {
     height: 100%;
     margin: 0;
+}
+
+#query-display {
+    font-family: 'Roboto Mono Variable' !important;
 }

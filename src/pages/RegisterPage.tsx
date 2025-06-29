@@ -1,10 +1,16 @@
 import { useContext, useState } from "react";
-import Container from "@mui/material/Container";
-import Box from "@mui/material/Box";
-import { TextField, Button, Typography, Alert, CircularProgress, Paper } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Typography,
+  Alert,
+  CircularProgress,
+  Paper,
+  Box,
+} from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { ApiService } from "../services/ApiService";
-import { Link, Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate } from "react-router";
 import { UserContext } from "../contexts/UserContext";
 
 export default function RegisterPage() {
@@ -14,15 +20,14 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
-  const isValidPassword = (password: string) => password.length >= 8;
-  const isValidEmail = (email: string) => {
-    // Expresión para validar email
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-};
+
   const { t } = useTranslation();
-  const navigate = useNavigate(); 
-  const { login,user } = useContext(UserContext);
+  const navigate = useNavigate();
+  const { login, user } = useContext(UserContext);
   const apiService = new ApiService();
+
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isValidPassword = (password: string) => password.length >= 8;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,128 +36,110 @@ export default function RegisterPage() {
 
     const data = await apiService.signin("", email, password);
     const token = data.access_token;
-    const [emailTouched, setEmailTouched] = useState(false);
 
     if (!token) {
       setMessage(t("Credenciales inválidas"));
+      setIsLoading(false);
+      return;
     }
 
     login(token);
-    navigate('/app/editor');
+    navigate("/app/editor");
   };
 
   if (user) {
-    return <Navigate to="/app/editor"></Navigate>
+    return <Navigate to="/app/editor" />;
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', flexBasis: 1 }}>
-      <Box
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        px: 2,
+        py: 12,
+      }}
+    >
+      <Paper
+        elevation={3}
         sx={{
-          flexGrow: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          py: { xs: 3, sm: 6 } 
+          p: 4,
+          borderRadius: 3,
+          width: "100%",
+          maxWidth: 400,
         }}
       >
-        <Container component="main" maxWidth="sm">
-          <Paper
-            elevation={2}
-            sx={{
-              p: { xs: 2, sm: 4 }, 
-              borderRadius: 3,
-              maxWidth: 400,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
+        <Typography variant="h4" gutterBottom color="primary">
+          {t("registerForm.title")}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          {t("registerForm.subtitle")}
+        </Typography>
+
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <TextField
+            label={t("form.emailLabel")}
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (!emailTouched) setEmailTouched(true);
             }}
+            onBlur={() => setEmailTouched(true)}
+            error={emailTouched && !!email && !isValidEmail(email)}
+            helperText={
+              emailTouched && !!email && !isValidEmail(email)
+                ? t("form.emailInvalid")
+                : ""
+            }
+            autoComplete="email"
+            required
+            fullWidth
+          />
+          <TextField
+            label={t("form.passwordLabel")}
+            type="password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (!passwordTouched) setPasswordTouched(true);
+            }}
+            onBlur={() => setPasswordTouched(true)}
+            error={passwordTouched && !!password && !isValidPassword(password)}
+            helperText={
+              passwordTouched && !!password && !isValidPassword(password)
+                ? t("form.passwordInvalid")
+                : ""
+            }
+            autoComplete="new-password"
+            required
+            fullWidth
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            size="large"
+            disabled={isLoading || !isValidEmail(email) || !isValidPassword(password)}
+            sx={{ fontWeight: "bold" }}
           >
-            <Typography variant="h4" component="h1" gutterBottom color="primary">
-              {t('registerForm.title')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {t('registerForm.subtitle')}
-            </Typography>
-            <Box
-              component="form"
-              onSubmit={handleSubmit}
-              sx={{
-                width: "100%", 
-                display: "flex",
-                flexDirection: "column",
-                gap: 2, 
-              }}
-            >
-              <TextField
-                label={t('form.emailLabel')}
-                type="email"
-                variant="outlined"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (!emailTouched) setEmailTouched(true);
-                }}
-                onBlur={() => setEmailTouched(true)}
-                error={emailTouched && !!email && !isValidEmail(email)}
-                helperText={
-                  emailTouched && !!email && !isValidEmail(email)
-                    ? t('form.emailInvalid')
-                    : ""
-                }
-                autoComplete="email"
-                required
-                fullWidth
-              />
-              <TextField
-                label={t('form.passwordLabel')}
-                type="password"
-                variant="outlined"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (!passwordTouched) setPasswordTouched(true);
-                }}
-                onBlur={() => setPasswordTouched(true)}
-                error={passwordTouched && !!password && !isValidPassword(password)}
-                helperText={
-                  passwordTouched && !!password && !isValidPassword(password)
-                    ? t('form.passwordInvalid')
-                    : ""
-                }
-                autoComplete="new-password"
-                required
-                fullWidth
-              />
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                fullWidth
-                size="large"
-                disabled={isLoading || password.length < 8 || !isValidEmail(email)}
-                sx={{ mt: 1, fontWeight: "bold", letterSpacing: 1 }}
-              >
-                {isLoading ? <CircularProgress size={24} color="inherit" /> : t('registerForm.submitButton')}
-              </Button>
-            </Box>
-            {message && (
-              <Alert
-                severity="error"
-                sx={{ width: "100%", mt: 2 }}
-              >
-                {message}
-              </Alert>
-            )}
-            <Link to={'/app/login'}>
-              <Button variant="text" color="secondary" sx={{ mt: 2, textTransform: "none" }} fullWidth>
-                {t('registerForm.loginButton')}
-              </Button>
-            </Link>
-          </Paper>
-        </Container>
-      </Box>
+            {isLoading ? <CircularProgress size={24} color="inherit" /> : t("registerForm.submitButton")}
+          </Button>
+        </Box>
+
+        {message && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {message}
+          </Alert>
+        )}
+
+        <Link to="/app/login">
+          <Button variant="text" fullWidth sx={{ mt: 2, textTransform: "none" }}>
+            {t("registerForm.loginButton")}
+          </Button>
+        </Link>
+      </Paper>
     </Box>
   );
 }

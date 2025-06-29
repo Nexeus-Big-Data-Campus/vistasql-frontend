@@ -65,6 +65,7 @@ function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | nul
     const joins = getJoins(rootNode);
     const fromClause = parseFromClause(rootNode, cteLocalContext);
     const selectClause = parseSelectClause(rootNode, fromClause.references, joins);
+    const unionClauses = parseUnionClause(rootNode, cteLocalContext);
     const errors = getQueryErrors(rootNode);
 
     return {
@@ -78,8 +79,38 @@ function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | nul
         selectClause: selectClause,
         whereClause: undefined, //TODO
         orderByClause: undefined, //TODO
+        unionClauses,
         errors
     };
+}
+
+function parseUnionClause(rootNode: Node, cteContext: Query[]): Query[] {
+    const set_operation = getDirectChildByType(rootNode, 'set_operation');
+
+    if (set_operation.length === 0) {
+        return [];
+    }
+
+    const operations = set_operation[0].childrenForFieldName('operation');
+    const unionQueries: Query[] = [];
+
+    operations.forEach(operation => {
+        if (!operation) {
+            return;
+        }
+        
+        const unionKeyword = getDirectChildByType(operation, 'keyword_union');
+
+        if (!unionKeyword || unionKeyword.length === 0) {
+            return;
+        }
+
+        unionQueries.push(buildQueryNodeFromTree(operation, 'union', 'union', cteContext));
+    })
+
+    
+
+    return unionQueries;
 }
 
 function parseFromClause(rootNode: Node, ctes: Query[]): FromClause {

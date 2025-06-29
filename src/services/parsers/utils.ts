@@ -13,15 +13,15 @@ export function getDirectChildByType(node: Node | null, type: string): (Node)[] 
 export function getNodeTypesInCurrentScope(node: Node, type: string): Node[] {
     const hits: Node[] = [];
     const children = node.namedChildren;
-    const heap = [...children];
-    while(heap.length > 0) {
-        const currentNode = heap.pop();
+    const queue = [...children];
+    while(queue.length > 0) {
+        const currentNode = queue.shift();
         if(currentNode?.type === type) {
             hits.push(currentNode);
         }
         
         if(currentNode?.type !== 'subquery' && currentNode?.type !== 'cte') {
-            heap.push(...currentNode?.namedChildren ?? []);
+            queue.push(...currentNode?.namedChildren ?? []);
         }
     }
 

@@ -1,5 +1,5 @@
 import { Node } from 'web-tree-sitter';
-import { generateHash, getDirectChildByType, parseObjectReference } from './utils';
+import { generateHash, getDirectChildByType, getNodeTypesInCurrentScope, parseObjectReference } from './utils';
 import { AllSelectorField, Field, FieldOrigin, FieldReference, FieldType, InvocationField } from '../../interfaces/field';
 import { Join } from '../../interfaces/join';
 import { ObjectReference, ObjectReferenceType } from '../../interfaces/query';
@@ -140,7 +140,7 @@ function processAllFieldsSelector(term: Node, references: ObjectReference[], joi
 function processInvocationField(term: Node, references: ObjectReference[], joins: Join[], alias: string | undefined): InvocationField {
     const invocation = getDirectChildByType(term, 'invocation')[0];
     const invocationName = getDirectChildByType(invocation, 'object_reference')[0]?.text;
-    const parameters = getDirectChildByType(invocation, 'term');
+    const parameters = getNodeTypesInCurrentScope(invocation, 'term');
     const fieldParameters = parameters.filter(p => p.childForFieldName('value')?.type === 'field');
     const fields = fieldParameters.map((p) => processField(p, references, joins, alias));
     const fieldReferences = fields.map((f) => f.references).flat();

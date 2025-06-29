@@ -1,6 +1,7 @@
 import { Handle, Position } from "@xyflow/react";
 import { Join } from "../../../interfaces/join";
 import { Tooltip } from "@mui/material";
+import { JoinFull, JoinInner, JoinLeft, JoinRight } from "@mui/icons-material";
 
 interface Props {
     data: Join;
@@ -8,16 +9,16 @@ interface Props {
 
 export default function JoinNode({ data }: Props) {
 
-    const getJoinIcon = () => {
+    const joinIcon = () => {
         switch (data.type.toLowerCase()) {
             case 'inner':
-                return '/icons/inner_join.png';
+                return <JoinInner className="!text-md !text-primary"></JoinInner>
             case 'left':
-                return '/icons/left_join.png';
+                return <JoinLeft className="!text-md !text-primary"></JoinLeft>;
             case 'right':
-                return '/icons/right_join.png';
+                return <JoinRight className="!text-md"></JoinRight>;
             default:
-                return '/icons/inner_join.png';
+                return <JoinFull className="!text-md"></JoinFull>
         }
     }
 
@@ -26,9 +27,11 @@ export default function JoinNode({ data }: Props) {
     }
 
     return <>
-        <div className="!rounded-[50%] !bg-white !border-1 !boder-black p-4 text-center aspect-square !text-sm max-w-[100px] uppercase flex flex-col items-center">
+        <div className="rounded-sm border-1 border-gray-200 bg-white py-1 px-4 text-center shadow-sm">
             <Tooltip title={getJoinText()} placement="top">
-                <img src={getJoinIcon()} alt="join" className="w-6 h-6"/>
+                <span id="join-icon">
+                    {joinIcon()}
+                </span>
             </Tooltip>
         </div>
         <Handle type="target" position={Position.Left} id={'target'}/>

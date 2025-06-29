@@ -3,16 +3,9 @@ import React from 'react';
 import { Query } from '../../../interfaces/query';
 import { Field, FieldReference, FieldType } from '../../../interfaces/field';
 import { EDGE_HIGHLIGHT_CLASS, FIELD_HIGHLIGHT_CLASS } from '../QueryDisplay';
-import { AbcOutlined, Calculate, CalculateOutlined, SwapVerticalCircleRounded, SwapVertOutlined } from '@mui/icons-material';
+import { Abc, AbcOutlined, Calculate, CalculateOutlined, SwapVert, SwapVerticalCircleRounded, SwapVertOutlined, TableChart, TableChartOutlined, ViewColumn, ViewColumnOutlined } from '@mui/icons-material';
 import { Tooltip } from '@mui/material';
-
-function TypeLabel({ type }: { type: string }) {
-    if (type === 'statement') return;
-
-    return (
-        <span className='text-[0.6rem] p-1 bg-gray-200 rounded-2xl ml-6'>{type}</span>
-    );
-}
+import { ARROW_MARKER, ARROW_MARKER_HIGHLIGHT } from '../../../hooks/useQueryFlow';
 
 interface Props {
     data: Query;
@@ -43,11 +36,13 @@ export default function QueryNode({ data, resetHighlight }: Props) {
     const fieldIcon = (field: Field) => {
         switch(field.type) {
             case FieldType.INVOCATION:
-                return <CalculateOutlined className='!text-[0.65rem]'></CalculateOutlined>
+                return <Calculate className='!text-[0.65rem]'></Calculate>
             case FieldType.CAST:
-                return <SwapVertOutlined className='!text-[0.65rem]'></SwapVertOutlined>
+                return <SwapVert className='!text-[0.65rem]'></SwapVert>
             case FieldType.LITERAL:
-                return <AbcOutlined className='!text-[0.65rem]'></AbcOutlined>
+                return <Abc className='!text-[0.65rem]'></Abc>
+            default:
+                return <ViewColumn className='!text-[0.65rem]'></ViewColumn>
         }
     }
 
@@ -60,14 +55,16 @@ export default function QueryNode({ data, resetHighlight }: Props) {
                     return {
                         ...e,
                         animated: false,
-                        className: ''
+                        className: '',
+                        markerEnd: ARROW_MARKER
                     };
                 }
 
                 return {
                     ...e,
-                    animated: true,
+                    animated: false,
                     className: EDGE_HIGHLIGHT_CLASS,
+                    markerEnd: ARROW_MARKER_HIGHLIGHT,
                 };
             });
 
@@ -76,19 +73,19 @@ export default function QueryNode({ data, resetHighlight }: Props) {
     }
 
     return (
-        <div className="rounded-t-xs overflow-visible border-1 bg-gray-900">
-            <header className='py-1 px-2 bg-gray-900 flex items-center justify-between'>
-                <span className='text-lg text-white'>{name}</span>
-                <TypeLabel type={type}></TypeLabel>
+        <div className="rounded-sm border-1 border-gray-200 min-w-[100px] bg-white shadow-xs">
+            <header className='py-1 px-4 text-primary text-center border-b-1 border-gray-200 font-bold'>
+                <TableChart className='text-primary !text-[0.65rem] mr-2'></TableChart>
+                <span className='text-sm'>{name}</span>
             </header>
             <section className='text-sm bg-white'>
                 {selectClause.fields.map((field, index) => (
                     <div data-fieldid={field.id} key={index} tabIndex={index} 
-                        className="text-xs p-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100 flex justify-between items-center relative overflow-visible"
+                        className="text-xs py-[0.25rem] px-2 cursor-pointer hover:bg-gray-100 flex items-center relative"
                         onClick={(event) => onFieldClick(event, field, index)}>
                         
                         <Tooltip title={field.type.toUpperCase()} className='mr-2'>
-                            <span>{fieldIcon(field)}</span>
+                            <span className='text-primary'>{fieldIcon(field)}</span>
                         </Tooltip>
                         
 

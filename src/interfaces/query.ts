@@ -13,6 +13,7 @@ export interface Query {
     selectClause: SelectClause;
     whereClause?: WhereClause;
     orderByClause?: OrderByClause;
+    unionClauses: Query[];
     joins: Join[];
     errors: LexicalError[];
 }

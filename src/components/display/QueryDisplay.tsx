@@ -6,7 +6,7 @@ import QueryNode from './nodes/QueryNode';
 import JoinNode from './nodes/JoinNode';
 import ReferenceNode from './nodes/ReferenceNode';
 import { Alert } from '@mui/material';
-import { FlowNode, useQueryFlow } from '../../hooks/useQueryFlow';
+import { ARROW_MARKER, FlowNode, useQueryFlow } from '../../hooks/useQueryFlow';
 
 export const FIELD_HIGHLIGHT_CLASS = 'highlight-field';
 export const EDGE_HIGHLIGHT_CLASS = 'highlight-edge';
@@ -57,6 +57,7 @@ export default function QueryDisplay({ queryTree }: Props) {
             animated: false,
             style: {},
             className: '',
+            markerEnd: ARROW_MARKER
         }));
 
         setEdges(newEdges as any);
@@ -73,6 +74,7 @@ export default function QueryDisplay({ queryTree }: Props) {
     return (
         <ReactFlowProvider>
             <ReactFlow
+            id='query-display'
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}

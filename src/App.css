@@ -1,20 +1,37 @@
 :root {
     --primary: #1976d2;
     --warning: #d2c019;
+
+    --highlight-transition: all ease-out 0.25s;
+}
+
+.MuiToolbar-regular {
+    height: 48px;
+    min-height: 48px !important;
 }
 
 .bg-primary {
     background-color: var(--primary) !important;
 }
 
+.text-primary {
+    color: var(--primary);
+}
+
 .highlight-field {
     background-color: var(--primary);
     color: white;
+    transition: var(--highlight-transition);
+}
+
+#join-icon svg {
+    color: var(--primary);
 }
 
 .highlight-edge path {
     stroke: var(--primary) !important;
-    stroke-width: 3px !important;
+    stroke-width: 2px !important;
+    transition: var(--highlight-transition);
 }
 
 .highlight-ambiguous-edge path  {
