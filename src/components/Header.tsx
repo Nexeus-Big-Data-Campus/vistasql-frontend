@@ -37,6 +37,7 @@ export default function Header() {
         <AppBar component="nav" sx={{minHeight: 40, position: 'relative'}}>
             <Toolbar sx={{justifyContent: 'space-between', background: 'white'}} className="text-primary">
                 <Typography 
+                    id="header-title"
                     variant="h6" 
                     component="div" 
                     sx={{ cursor: 'pointer', fontFamily: 'Roboto Mono Variable', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.8px' }} 

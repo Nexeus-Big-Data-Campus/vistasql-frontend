@@ -24,13 +24,24 @@ export default function LoginPage() {
   const apiService = new ApiService();
   const navigate = useNavigate();
 
+  const handleError = (error: string) => {
+    setMessage(t(error));
+    setIsLoading(false);
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setMessage("");
 
-    const data = await apiService.login(email, password);
-    const token = data.access_token;
+    const response = await apiService.login(email, password);
+
+    if (response.error) {
+      handleError(response.error);
+      return;
+    }
+
+    const token = response.data.access_token;
 
     if (!token) {
       setMessage(t("Credenciales inválidas"));
@@ -113,7 +124,7 @@ export default function LoginPage() {
           </Alert>
         )}
 
-        <Link to="/app/signin">
+        <Link to="/signin">
           <Button variant="text" fullWidth sx={{ mt: 2, textTransform: "none" }}>
             {t("loginForm.createAccountButton")}
           </Button>

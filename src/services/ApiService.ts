@@ -1,6 +1,11 @@
-type LoginResponse = {
+interface Response {
+  error?: string ;
+  code: number;
+  data?: any;
+}
+
+interface LoginResponse {
   access_token: string;
-  token_type: string;
 };
 
 export class ApiService {
@@ -19,11 +24,11 @@ export class ApiService {
     return headers;
   }
 
-  async login(email: string, password: string):  Promise<LoginResponse> {
+  async login(email: string, password: string):  Promise<Response> {
     return await this.makeRequest("/login", "POST", { email, password });
   }
 
-  async signin(name: string, email: string, password: string): Promise<LoginResponse> {
+  async signin(name: string, email: string, password: string): Promise<Response> {
     return await this.makeRequest("/signin", "POST", { name, email, password });
   }
 
@@ -31,20 +36,27 @@ export class ApiService {
     return await this.makeRequest("/profile", "GET");
   }
   
-  private async makeRequest(endpoint: string, method: string, body?: any) {
+  private async makeRequest(endpoint: string, method: string, body?: any): Promise<Response> {
     const response = await fetch(`${this.API_URL}${endpoint}`, {
       method,
       headers: this.getHeaders(),
       body: JSON.stringify(body),
     });
 
+    const data = await response.json();
+
     // Manejo de errores
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.detail || "Request failed");
+      return {
+        error: data.detail,
+        code: response.status
+      };
     }
 
-    return await response.json();
+    return {
+      code: response.status,
+      data
+    };
   }
 }
 

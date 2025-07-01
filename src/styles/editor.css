@@ -2,7 +2,7 @@
     counter-reset: line;
 
     .keyword {
-        color: blue;
+        color: var(--primary);
     }
 
     .identifier {

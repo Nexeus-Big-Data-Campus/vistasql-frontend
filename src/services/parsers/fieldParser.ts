@@ -47,6 +47,7 @@ function processDateOperationField(term: Node, references: ObjectReference[], jo
         isReferenced: false,
         parameters: [parameterId],
         references: parameter?.references ?? [],
+        referencedBy: [],
         text: term.text,
         type: FieldType.INVOCATION
     };
@@ -61,6 +62,7 @@ function processLiteralField(term: Node, alias: string | undefined): Field {
         isAmbiguous: false,
         isReferenced: false,
         references: [],
+        referencedBy: [],
         type: FieldType.LITERAL,
     }
 }
@@ -92,6 +94,7 @@ function parseInvocationParameter(parameter: Node, alias: string | undefined, re
         isAmbiguous: field.isAmbiguous,
         isReferenced: false,
         references: field.references,
+        referencedBy: [],
         type: fieldType,
     };
 }
@@ -131,6 +134,7 @@ function processAllFieldsSelector(term: Node, references: ObjectReference[], joi
         isAmbiguous: false,
         isReferenced: false,
         references: getFromClauseAndJoinsReferences(id, references, joins),
+        referencedBy: [],
         type: FieldType.ALL_SELECTOR,
         selectFrom,
         exceptFields
@@ -152,6 +156,7 @@ function processInvocationField(term: Node, references: ObjectReference[], joins
         alias: alias ?? term.text,
         invocationName,
         references: fieldReferences,
+        referencedBy: [],
         parameters: parameters.map((p) => p.text),
         isAmbiguous: false,
         isReferenced: false,
@@ -166,33 +171,38 @@ function processField(term: Node, references: ObjectReference[], joins: Join[], 
     const objectReference = termValue?.descendantsOfType('object_reference') ?? [];
     const { name } = parseObjectReference(objectReference[0]?.text ?? ''); 
     const fieldName = getDirectChildByType(termValue, 'identifier')[0]?.text;
-    const fieldReferences = findReferencesForField(id, name, fieldName, references, joins, alias ?? term.text);
-
-    return {
+    let field: Field = {
         id,
         name: fieldName ?? term.text,
         text: term.text,
         alias: alias ?? term.text,
-        references: fieldReferences,
-        isAmbiguous: fieldReferences.length > 1,
+        references: [],
+        referencedBy: [],
+        isAmbiguous: false, // TODO
         isReferenced: false,
         type: FieldType.FIELD,
     }
+
+    const fieldReferences = findReferencesForField(field, name, references, joins, alias ?? term.text);
+    field.references = fieldReferences;
+
+    return field;
 }
 
-function findReferencesForField(fieldId: string, objectReferenceName: string, fieldName: string, objectReferences: ObjectReference[], joins: Join[], alias: string | undefined): FieldReference[] {
+function findReferencesForField(field: Field, objectReferenceName: string, objectReferences: ObjectReference[], joins: Join[], alias: string | undefined): FieldReference[] {
     let fieldReferences: FieldReference[] = [];
 
     objectReferences.forEach(reference => {
         if (reference.ref && (objectReferenceName && objectReferenceName === reference.alias) || !objectReferenceName) {
             reference.ref?.selectClause.fields.forEach(f => {
-                if (f.name === fieldName || f.alias === fieldName) {
-                    fieldReferences.push(createFieldReference(f.id, reference.ref?.id || '', FieldOrigin.CTE));
+                if (f.name === field.name || f.alias === field.name) {
+                    fieldReferences.push(createFieldReference(f.id, reference.ref?.id || '', FieldOrigin.CTE, [...f.references]));
                     f.isReferenced = true;
+                    f.referencedBy.push(field);
                 }
             });
         } else if (objectReferenceName === reference.name || objectReferenceName === reference.alias)  {
-            fieldReferences.push(createFieldReference(fieldId, reference.id, FieldOrigin.REFERENCE));
+            fieldReferences.push(createFieldReference(field.id, reference.id, FieldOrigin.REFERENCE, []));
         }
     });
 
@@ -202,7 +212,7 @@ function findReferencesForField(fieldId: string, objectReferenceName: string, fi
 
     joins.forEach(join => {
         if (objectReferenceName && (join.alias === objectReferenceName || join.source.name === objectReferenceName)) {
-            fieldReferences.push(createFieldReference(fieldId, join.id, FieldOrigin.JOIN))
+            fieldReferences.push(createFieldReference(field.id, join.id, FieldOrigin.JOIN, []))
         }
     });
 
@@ -210,7 +220,7 @@ function findReferencesForField(fieldId: string, objectReferenceName: string, fi
         return fieldReferences;
     }
 
-    fieldReferences = fieldReferences.concat(getFromClauseAndJoinsReferences(fieldId, objectReferences, joins));
+    fieldReferences = fieldReferences.concat(getFromClauseAndJoinsReferences(field.id, objectReferences, joins));
 
     return fieldReferences;
 }
@@ -219,20 +229,21 @@ function getFromClauseAndJoinsReferences(fieldId: string, references: ObjectRefe
     const fieldReferences: FieldReference[] = [];
 
     references.forEach((ref) => {
-        fieldReferences.push(createFieldReference(fieldId, ref.id, FieldOrigin.REFERENCE));
+        fieldReferences.push(createFieldReference(fieldId, ref.id, FieldOrigin.REFERENCE, []));
     });
 
     joins.forEach((join) => {
-        fieldReferences.push(createFieldReference(fieldId, join.id, FieldOrigin.JOIN));
+        fieldReferences.push(createFieldReference(fieldId, join.id, FieldOrigin.JOIN, []));
     });
 
     return fieldReferences;
 }
 
-function createFieldReference(fieldId: string, nodeId: string, origin: FieldOrigin): FieldReference {
+function createFieldReference(fieldId: string, nodeId: string, origin: FieldOrigin, parents: FieldReference[]): FieldReference {
     return {
         fieldId,
         nodeId,
         origin,
+        parents,
     };
 }

@@ -6,6 +6,7 @@ export interface Field {
     name: string;
     alias: string;
     references: FieldReference[];
+    referencedBy: Field[];
     isAmbiguous: boolean;
     isReferenced: boolean;
     type: FieldType;
@@ -31,6 +32,7 @@ export interface FieldReference {
   fieldId: string;
   nodeId: string;
   origin: FieldOrigin;
+  parents: FieldReference[];
 }
 
 export enum FieldType {

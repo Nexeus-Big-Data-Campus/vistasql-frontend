@@ -342,6 +342,7 @@ function getChildrenFields(node: Query, exceptFields: Field[]): Field[] {
                     fieldId: f.id,
                     nodeId: node.id,
                     origin: FieldOrigin.CTE,
+                    parents: [...f.references]
                 }],
             };
         });

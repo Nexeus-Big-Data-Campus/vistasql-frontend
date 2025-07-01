@@ -1,7 +1,7 @@
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import React from 'react';
 import { Query } from '../../../interfaces/query';
-import { Field, FieldReference, FieldType } from '../../../interfaces/field';
+import { Field, FieldOrigin, FieldReference, FieldType } from '../../../interfaces/field';
 import { EDGE_HIGHLIGHT_CLASS, FIELD_HIGHLIGHT_CLASS } from '../QueryDisplay';
 import { Abc, AbcOutlined, Calculate, CalculateOutlined, SwapVert, SwapVerticalCircleRounded, SwapVertOutlined, TableChart, TableChartOutlined, ViewColumn, ViewColumnOutlined } from '@mui/icons-material';
 import { Tooltip } from '@mui/material';
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function QueryNode({ data, resetHighlight }: Props) {
-    const { id, name, selectClause, type } = data;
+    const {  name, selectClause } = data;
     const { setEdges } = useReactFlow();
 
     const onFieldClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, field: Field, index: number) => {
@@ -23,8 +23,42 @@ export default function QueryNode({ data, resetHighlight }: Props) {
         highlightEdges(field);
     }
 
+    const getHighlightIds = (field: Field): string[] => {
+        const relatedIds: string[] = [field.id];
+        const refs: FieldReference[] = [...field.references];
+
+        while(refs.length > 0) {
+            const ref = refs.shift();
+
+            if (!ref) { 
+                break;
+            }
+
+            if (ref.origin === FieldOrigin.JOIN) {
+                relatedIds.push(ref.nodeId);
+            }
+
+            refs.push(...ref.parents);
+            relatedIds.push(ref.fieldId);
+        }
+
+        const referencedByIds = [...field.referencedBy];
+
+        while (referencedByIds.length > 0) {
+            const f = referencedByIds.shift();
+            if (!f) {
+                break;
+            }
+
+            relatedIds.push(f.id);
+            referencedByIds.push(...f.referencedBy);
+        }
+
+        return relatedIds;
+    }
+
     const highlightField = (field: Field) => {
-        const highlightIds = [field.id, ...field.references.map(r => r.fieldId)];
+        const highlightIds = getHighlightIds(field);
 
         highlightIds.forEach(fieldId => {
             document.querySelectorAll(`[data-fieldid="${fieldId}"]`).forEach((field) => {
@@ -47,9 +81,11 @@ export default function QueryNode({ data, resetHighlight }: Props) {
     }
 
     const highlightEdges = (field: Field) => {
+        const highlightIds = getHighlightIds(field); 
+
         setEdges((prevEdges) => {
             const updated = prevEdges.map((e) => {
-                const isFieldEdge = e.id.includes(field.id) || field.references.some((ref: FieldReference) => e.id.includes(ref.fieldId));
+                const isFieldEdge = highlightIds.some(id => e.id.includes(id));
 
                 if (!isFieldEdge) {
                     return {

@@ -5,6 +5,12 @@
     --highlight-transition: all ease-out 0.25s;
 }
 
+#header-title::after {
+    content: "BETA";
+    font-size: 0.75rem;
+    font-weight: 200;
+}
+
 .MuiToolbar-regular {
     height: 48px;
     min-height: 48px !important;

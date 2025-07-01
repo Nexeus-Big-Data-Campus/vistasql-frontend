@@ -29,20 +29,24 @@ export default function RegisterPage() {
   const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isValidPassword = (password: string) => password.length >= 8;
 
+  const handleError = (error: string) => {
+    setMessage(t(error));
+    setIsLoading(false);
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setMessage("");
 
-    const data = await apiService.signin("", email, password);
-    const token = data.access_token;
+    const response = await apiService.signin("", email, password);
 
-    if (!token) {
-      setMessage(t("Credenciales inválidas"));
-      setIsLoading(false);
+    if(response.error) {
+      handleError(response.error);
       return;
     }
 
+    const token = response.data.access_token;
     login(token);
     navigate("/app/editor");
   };
@@ -134,7 +138,7 @@ export default function RegisterPage() {
           </Alert>
         )}
 
-        <Link to="/app/login">
+        <Link to="/login">
           <Button variant="text" fullWidth sx={{ mt: 2, textTransform: "none" }}>
             {t("registerForm.loginButton")}
           </Button>

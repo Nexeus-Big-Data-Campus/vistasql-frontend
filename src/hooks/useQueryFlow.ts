@@ -85,7 +85,7 @@ const getJoinNode = (join: Join, parentHash?: string): FlowNode => {
 
 const getJoinReferenceTableNode = (reference: ObjectReference, parentHash?: string): FlowNode => {
     return {
-        id: `${parentHash}-join-ref`,
+        id: `${reference.id}-join-ref`,
         type: FlowNodeType.Reference,
         data: reference,
         parent: parentHash,
@@ -217,7 +217,7 @@ const getEdgesFromJoins = (joins: Join[], node: FlowNode): FlowEdge[] => {
         if (source.type === ObjectReferenceType.TABLE) {
             edges.push({
                 id: `${join.source.id}-${join.id}`,
-                source: `${join.id}-join-ref`,
+                source: `${join.source.id}-join-ref`,
                 target: `${join.id}`,
                 sourceHandle: 'source',
                 targetHandle: 'target',
