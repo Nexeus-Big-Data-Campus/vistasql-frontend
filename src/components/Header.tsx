@@ -70,7 +70,7 @@ export default function Header() {
                         </>
                     ) : (                    
                         <span className="flex gap-2">
-                            <Button variant="outlined" onClick={() => navigate('/signin')}>{t('header.signUp')}</Button>
+                            {/* <Button variant="outlined" onClick={() => navigate('/signin')}>{t('header.signUp')}</Button> */}
                             <Button variant="contained" onClick={() => navigate('/login')}>{t('header.login')}</Button>
                         </span>
                     )}
