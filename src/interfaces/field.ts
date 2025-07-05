@@ -10,6 +10,8 @@ export interface Field {
     isAmbiguous: boolean;
     isReferenced: boolean;
     type: FieldType;
+    startPosition: TokenPosition;
+    endPosition: TokenPosition;
 }
 
 export interface InvocationField extends Field {
@@ -41,4 +43,9 @@ export enum FieldType {
     CAST = 'cast',
     INVOCATION = 'invocation',
     ALL_SELECTOR = 'all_selector',
+}
+
+export interface TokenPosition {
+    row: number;
+    column: number;
 }

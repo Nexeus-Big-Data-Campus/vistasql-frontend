@@ -16,14 +16,6 @@ interface Props {
     queryTree: Query[]
 }
 
-function EmptyQueryAlert({queryLength} : {queryLength: number}) {
-    if (queryLength > 0) return;
-
-    return (
-        <Alert severity='info'>Type your Query in the editor to update the visualization.</Alert>
-    );
-}
-
 export default function QueryDisplay({ queryTree }: Props) {
 
     const [flowInstance, setFLowInstance] = useState<ReactFlowInstance<any, any> | undefined>();
@@ -84,7 +76,6 @@ export default function QueryDisplay({ queryTree }: Props) {
             onEdgesChange={onEdgesChange}
             onClick={onCanvasClick}
         >
-            <EmptyQueryAlert queryLength={queryTree.length}/>
             <Controls showInteractive={false}></Controls>
             <Background></Background>
         </ReactFlow>

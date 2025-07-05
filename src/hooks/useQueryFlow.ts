@@ -31,17 +31,17 @@ export interface FlowEdge {
 }
 
 export const ARROW_MARKER: EdgeMarker = {
-    type: MarkerType.Arrow,
-    width: 10,
-    height: 10,
-    strokeWidth: 2
+    type: MarkerType.ArrowClosed,
+    width: 15,
+    height: 15,
+    strokeWidth: 1
 }
 
 export const ARROW_MARKER_HIGHLIGHT: EdgeMarker = {
-    type: MarkerType.Arrow,
-    width: 7,
-    height: 7,
-    strokeWidth: 2,
+    type: MarkerType.ArrowClosed,
+    width: 9,
+    height: 9,
+    strokeWidth: 1,
     color: '#1976d2',
 }
 
@@ -146,6 +146,10 @@ const getAllNodesFromTree = (node: Query, parentHash?: string): FlowNode[] => {
         treeNodes.push(...getReferenceNode(reference, node.id));
     });
 
+    node.unionClauses.forEach(union => {
+        treeNodes.push(...getAllNodesFromTree(union, `${node.id}`));
+    });
+
     return treeNodes;
 };
 
@@ -187,7 +191,7 @@ const buildLayout = (flowNodes: FlowNode[], edges: any[]): FlowNode[] => {
     return graphNodes;
 };
 
-const getEdgesFromFields = (fields: Field[], node: FlowNode): FlowEdge[] => {
+const getEdgesFromFields = (fields: Field[], targetId: string): FlowEdge[] => {
     const edges: FlowEdge[] = [];
 
     fields.forEach((field: Field) => {
@@ -197,7 +201,7 @@ const getEdgesFromFields = (fields: Field[], node: FlowNode): FlowEdge[] => {
             const edge: FlowEdge = {
                 id: `${ref.fieldId}-${fieldId}-${i}`,
                 source: `${ref.nodeId}`,
-                target: node.id,
+                target: targetId,
                 sourceHandle: sourceHandle,
                 targetHandle: `${fieldId}-target`,
                 markerEnd: ARROW_MARKER
@@ -240,14 +244,34 @@ const getEdgesFromJoins = (joins: Join[], node: FlowNode): FlowEdge[] => {
     return edges;
 }
 
+const getEdgesFromUnions = (unions: Query[], parent: FlowNode): FlowEdge[] => {
+    return unions.reduce((fields, union) => {
+        const unionEdges: FlowEdge[] = [];
+        union.selectClause.fields.forEach(field => {
+            unionEdges.push({
+                id: `${parent.id}-${union.id}-${field.id}`,
+                source: `${union.id}`,
+                target: `${parent.id}`,
+                sourceHandle: `${field.id}-source`,
+                targetHandle: `${field.id}-target`,
+                markerEnd: ARROW_MARKER
+            })
+        });
+
+        return fields.concat(unionEdges);
+    }, [] as FlowEdge[]);
+}
+
 const getEdgesFromQueryNode = (node: FlowNode): FlowEdge[] => {
     const data = node.data as Query;
     const fields = data.selectClause?.fields ?? [];
     const joins = data.joins ?? [];
+    const unions = data.unionClauses ?? [];
     const edges: FlowEdge[] = [];
     
-    edges.push(...getEdgesFromFields(fields, node));
+    edges.push(...getEdgesFromFields(fields, node.id));
     edges.push(...getEdgesFromJoins(joins, node));
+    edges.push(...getEdgesFromUnions(unions, node));
     
     return edges;
 }

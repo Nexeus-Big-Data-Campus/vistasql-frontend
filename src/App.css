@@ -28,6 +28,10 @@
     background-color: var(--primary);
     color: white;
     transition: var(--highlight-transition);
+
+    svg {
+        color: white !important;
+    }
 }
 
 #join-icon svg {
@@ -56,4 +60,22 @@
 
 .invocation-column-text {
     display: none;
+}
+
+.editor-select-field {
+    pointer-events: auto;
+    
+    &.highlight-field {
+        background: var(--primary);
+        color: white;
+        transition: var(--highlight-transition);
+
+        .keyword, .string {
+            color: white !important;
+        }
+    }
+
+    &:hover {
+        background: red;
+    }
 }

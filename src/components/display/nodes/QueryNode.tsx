@@ -1,11 +1,11 @@
-import { Handle, Position, useReactFlow } from '@xyflow/react';
+import { useReactFlow } from '@xyflow/react';
 import React from 'react';
 import { Query } from '../../../interfaces/query';
-import { Field, FieldOrigin, FieldReference, FieldType } from '../../../interfaces/field';
+import { Field, FieldOrigin, FieldReference } from '../../../interfaces/field';
 import { EDGE_HIGHLIGHT_CLASS, FIELD_HIGHLIGHT_CLASS } from '../QueryDisplay';
-import { Abc, AbcOutlined, Calculate, CalculateOutlined, SwapVert, SwapVerticalCircleRounded, SwapVertOutlined, TableChart, TableChartOutlined, ViewColumn, ViewColumnOutlined } from '@mui/icons-material';
-import { Tooltip } from '@mui/material';
+import { TableChart } from '@mui/icons-material';
 import { ARROW_MARKER, ARROW_MARKER_HIGHLIGHT } from '../../../hooks/useQueryFlow';
+import { QueryField } from './QueryField';
 
 interface Props {
     data: Query;
@@ -13,10 +13,10 @@ interface Props {
 }
 
 export default function QueryNode({ data, resetHighlight }: Props) {
-    const {  name, selectClause } = data;
+    const {  name, selectClause, unionClauses } = data;
     const { setEdges } = useReactFlow();
 
-    const onFieldClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, field: Field, index: number) => {
+    const onFieldClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, field: Field) => {
         event.stopPropagation();
         resetHighlight();
         highlightField(field);
@@ -61,24 +61,11 @@ export default function QueryNode({ data, resetHighlight }: Props) {
         const highlightIds = getHighlightIds(field);
 
         highlightIds.forEach(fieldId => {
-            document.querySelectorAll(`[data-fieldid="${fieldId}"]`).forEach((field) => {
+            document.querySelectorAll(`[data-fieldid="${fieldId}"], [data-relatedids*="${fieldId}"]`).forEach((field) => {
                 field.classList.add(FIELD_HIGHLIGHT_CLASS);
             });
         });
     };
-
-    const fieldIcon = (field: Field) => {
-        switch(field.type) {
-            case FieldType.INVOCATION:
-                return <Calculate className='!text-[0.65rem]'></Calculate>
-            case FieldType.CAST:
-                return <SwapVert className='!text-[0.65rem]'></SwapVert>
-            case FieldType.LITERAL:
-                return <Abc className='!text-[0.65rem]'></Abc>
-            default:
-                return <ViewColumn className='!text-[0.65rem]'></ViewColumn>
-        }
-    }
 
     const highlightEdges = (field: Field) => {
         const highlightIds = getHighlightIds(field); 
@@ -114,28 +101,28 @@ export default function QueryNode({ data, resetHighlight }: Props) {
                 <TableChart className='text-primary !text-[0.65rem] mr-2'></TableChart>
                 <span className='text-sm'>{name}</span>
             </header>
-            <section className='text-sm bg-white'>
-                {selectClause.fields.map((field, index) => (
-                    <div data-fieldid={field.id} key={index} tabIndex={index} 
-                        className="text-xs py-[0.25rem] px-2 cursor-pointer hover:bg-gray-100 flex items-center relative"
-                        onClick={(event) => onFieldClick(event, field, index)}>
-                        
-                        <Tooltip title={field.type.toUpperCase()} className='mr-2'>
-                            <span className='text-primary'>{fieldIcon(field)}</span>
-                        </Tooltip>
-                        
+            <section className='text-sm bg-white text-xs'>
+                {
+                    selectClause.fields.map((field) => 
+                        <QueryField field={field} key={field.id} onFieldClick={onFieldClick}></QueryField>   
+                    )
+                }
 
-                        {field.alias}
+                {
+                    unionClauses.map(union => 
+                        <>
+                            <div className='w-full p-2 text-primary'>
+                                UNION
+                            </div>
 
-                        { field.references.length > 0 &&
-                            <Handle type="target" position={Position.Left} id={`${field.id}-target`} />
-                        }
-
-                        { field.isReferenced &&
-                            <Handle type="source" position={Position.Right} id={`${field.id}-source`} />
-                        }
-                    </div>
-                ))}
+                            {
+                                union.selectClause.fields.map((field) =>
+                                    <QueryField field={field} key={'union' + field.id} onFieldClick={onFieldClick}></QueryField>
+                                )
+                            }
+                        </>
+                    )
+                }
             </section>
         </div>
     );

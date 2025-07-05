@@ -95,20 +95,17 @@ function parseUnionClause(rootNode: Node, cteContext: Query[]): Query[] {
     const unionQueries: Query[] = [];
 
     operations.forEach(operation => {
-        if (!operation) {
-            return;
-        }
-        
-        const unionKeyword = getDirectChildByType(operation, 'keyword_union');
-
-        if (!unionKeyword || unionKeyword.length === 0) {
+        if (!operation || operation.type !== 'union_operation') {
             return;
         }
 
-        unionQueries.push(buildQueryNodeFromTree(operation, 'union', 'union', cteContext));
+        const unionQuery = buildQueryNodeFromTree(operation, 'union', 'union', cteContext);
+        unionQuery.selectClause.fields.forEach(field => {
+            field.isReferenced = true;
+        });
+
+        unionQueries.push(unionQuery);
     })
-
-    
 
     return unionQueries;
 }

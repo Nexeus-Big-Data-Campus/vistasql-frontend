@@ -23,6 +23,7 @@
     }
 
     pre {
+        pointer-events: auto !important;
         padding-left: 50px !important;
     }
 

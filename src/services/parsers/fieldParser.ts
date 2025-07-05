@@ -1,6 +1,6 @@
 import { Node } from 'web-tree-sitter';
 import { generateHash, getDirectChildByType, getNodeTypesInCurrentScope, parseObjectReference } from './utils';
-import { AllSelectorField, Field, FieldOrigin, FieldReference, FieldType, InvocationField } from '../../interfaces/field';
+import { AllSelectorField, Field, FieldOrigin, FieldReference, FieldType, InvocationField, TokenPosition } from '../../interfaces/field';
 import { Join } from '../../interfaces/join';
 import { ObjectReference, ObjectReferenceType } from '../../interfaces/query';
 
@@ -49,7 +49,9 @@ function processDateOperationField(term: Node, references: ObjectReference[], jo
         references: parameter?.references ?? [],
         referencedBy: [],
         text: term.text,
-        type: FieldType.INVOCATION
+        type: FieldType.INVOCATION,
+        startPosition: term.startPosition,
+        endPosition: term.endPosition,
     };
 }
 
@@ -64,6 +66,8 @@ function processLiteralField(term: Node, alias: string | undefined): Field {
         references: [],
         referencedBy: [],
         type: FieldType.LITERAL,
+        startPosition: term.startPosition,
+        endPosition: term.endPosition,
     }
 }
 
@@ -96,6 +100,8 @@ function parseInvocationParameter(parameter: Node, alias: string | undefined, re
         references: field.references,
         referencedBy: [],
         type: fieldType,
+        startPosition: parameter.startPosition,
+        endPosition: parameter.endPosition,
     };
 }
 
@@ -137,7 +143,9 @@ function processAllFieldsSelector(term: Node, references: ObjectReference[], joi
         referencedBy: [],
         type: FieldType.ALL_SELECTOR,
         selectFrom,
-        exceptFields
+        exceptFields,
+        startPosition: term.startPosition,
+        endPosition: term.endPosition,
     };
 }   
 
@@ -161,6 +169,8 @@ function processInvocationField(term: Node, references: ObjectReference[], joins
         isAmbiguous: false,
         isReferenced: false,
         type: FieldType.INVOCATION,
+        startPosition: term.startPosition,
+        endPosition: term.endPosition,
     };
 }
 
@@ -181,6 +191,8 @@ function processField(term: Node, references: ObjectReference[], joins: Join[], 
         isAmbiguous: false, // TODO
         isReferenced: false,
         type: FieldType.FIELD,
+        startPosition: term.startPosition,
+        endPosition: term.endPosition,
     }
 
     const fieldReferences = findReferencesForField(field, name, references, joins, alias ?? term.text);
