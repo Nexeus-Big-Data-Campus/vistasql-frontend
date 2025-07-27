@@ -32,9 +32,8 @@ export default function Header() {
         navigate('/login');
     };
 
-
     return (
-        <AppBar component="nav" sx={{minHeight: 40, position: 'relative'}}>
+        <AppBar component="nav" sx={{minHeight: 40, position: 'relative', boxShadow: '0px 1px 4px #dedede'}}>
             <Toolbar sx={{justifyContent: 'space-between', background: 'white'}} className="text-primary">
                 <Typography 
                     id="header-title"

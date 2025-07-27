@@ -19,6 +19,8 @@ export interface FlowNode {
     position: XYPosition;
     parent?: string;
     edgelLabel?: string;
+    width?: number;
+    height?: number;
 }
 
 export interface FlowEdge {
@@ -45,19 +47,30 @@ export const ARROW_MARKER_HIGHLIGHT: EdgeMarker = {
     color: '#1976d2',
 }
 
+const getMaxFieldLength = (maxLength: number, field: Field): number => {
+    return Math.max(field.alias.length, maxLength); 
+}
+
+const getAllFields = (query: Query): Field[] => {
+    return query.selectClause.fields.concat(...query.unionClauses.map(uc => uc.selectClause.fields));
+}
+
 const getNodeSize = (node: FlowNode): { width: number; height: number } => {
     switch (node.type) {
         case FlowNodeType.Query:
             const query = node.data as Query;
-            const height = (query.selectClause.fields.length * 40) + 60;
-            return { width: 250, height };
+            const allFields = getAllFields(query);
+            const height = (allFields.length * 40) + 50;
+            const maxWidthField = allFields.reduce(getMaxFieldLength, 0);
+            const contentMaxWidth = Math.max(maxWidthField, query.name.length);
+            return { width: (contentMaxWidth * 12) + 50, height };
         case FlowNodeType.Join:
             return { width: 80, height: 50 };
         case FlowNodeType.Reference:
             const reference = node.data as ObjectReference;
-            return { width: (reference.name.length * 16) + 20 + 30, height: 50 };
+            return { width: (reference.name.length * 12) + 50, height: 40 };
         default:
-            return { width: 200, height: 50 };
+            return { width: 200, height: 100 };
     }
 };
 
@@ -100,6 +113,8 @@ const getJoinReferenceNode = (reference: ObjectReference, parentHash?: string): 
             return getAllNodesFromTree(reference.ref as Query);
         case ObjectReferenceType.TABLE:
             return [getJoinReferenceTableNode(reference, parentHash)];
+        default:
+            return [];
     }
 }
 
@@ -109,6 +124,8 @@ const getReferenceNode = (reference: ObjectReference, parentHash?: string): Flow
             return getAllNodesFromTree(reference.ref as Query);
         case ObjectReferenceType.TABLE:
             return [getTableNode(reference, parentHash)];
+        default:
+            return [];
     }
 }
 
@@ -146,9 +163,9 @@ const getAllNodesFromTree = (node: Query, parentHash?: string): FlowNode[] => {
         treeNodes.push(...getReferenceNode(reference, node.id));
     });
 
-    node.unionClauses.forEach(union => {
+    /* node.unionClauses.forEach(union => {
         treeNodes.push(...getAllNodesFromTree(union, `${node.id}`));
-    });
+    }); */
 
     return treeNodes;
 };
@@ -158,8 +175,9 @@ const buildLayout = (flowNodes: FlowNode[], edges: any[]): FlowNode[] => {
 
     g.setGraph({
         rankdir: 'LR',
-        nodesep: 100,
-        ranksep: 100,
+        align: 'UR',
+        nodesep: 150,
+        ranksep: 250,
     });
 
     flowNodes.forEach((node) => {
@@ -178,13 +196,14 @@ const buildLayout = (flowNodes: FlowNode[], edges: any[]): FlowNode[] => {
     dagre.layout(g);
     const graphNodes = flowNodes.map((node) => {
         const nodeWithPosition = g.node(node.id);
-
         return {
             ...node,
             position: {
                 x: nodeWithPosition.x,
                 y: nodeWithPosition.y,
             },
+            width: nodeWithPosition.width,
+            height: nodeWithPosition.height,
         };
     });
 
@@ -197,6 +216,10 @@ const getEdgesFromFields = (fields: Field[], targetId: string): FlowEdge[] => {
     fields.forEach((field: Field) => {
         const fieldId = field.id;
         field.references.forEach((ref: FieldReference, i: number) => {
+            /* if (ref.origin === FieldOrigin.JOIN) {
+                return;
+            } */
+
             const sourceHandle = ref.origin !== FieldOrigin.CTE ? 'source' : `${ref.fieldId}-source`;
             const edge: FlowEdge = {
                 id: `${ref.fieldId}-${fieldId}-${i}`,
@@ -227,7 +250,7 @@ const getEdgesFromJoins = (joins: Join[], node: FlowNode): FlowEdge[] => {
                 targetHandle: 'target',
                 markerEnd: ARROW_MARKER
             });
-        } else if (source.type === ObjectReferenceType.SUBQUERY) {
+        } else if (source.type === ObjectReferenceType.SUBQUERY || source.type === ObjectReferenceType.CTE) {
             source.ref?.selectClause.fields.forEach(field => {
                 edges.push({
                     id: `${source.ref?.id}-${field.id}`,
@@ -246,18 +269,7 @@ const getEdgesFromJoins = (joins: Join[], node: FlowNode): FlowEdge[] => {
 
 const getEdgesFromUnions = (unions: Query[], parent: FlowNode): FlowEdge[] => {
     return unions.reduce((fields, union) => {
-        const unionEdges: FlowEdge[] = [];
-        union.selectClause.fields.forEach(field => {
-            unionEdges.push({
-                id: `${parent.id}-${union.id}-${field.id}`,
-                source: `${union.id}`,
-                target: `${parent.id}`,
-                sourceHandle: `${field.id}-source`,
-                targetHandle: `${field.id}-target`,
-                markerEnd: ARROW_MARKER
-            })
-        });
-
+        const unionEdges: FlowEdge[] = getEdgesFromFields(union.selectClause.fields, parent.id);
         return fields.concat(unionEdges);
     }, [] as FlowEdge[]);
 }

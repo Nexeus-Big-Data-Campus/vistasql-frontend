@@ -3,6 +3,9 @@
     --warning: #d2c019;
 
     --highlight-transition: all ease-out 0.25s;
+    --border-radius: 0.25rem;
+
+    --Paper-shadow: 4px 4px 10px red:
 }
 
 #header-title::after {
@@ -74,8 +77,11 @@
             color: white !important;
         }
     }
+}
 
-    &:hover {
-        background: red;
-    }
+.react-flow__minimap {
+    border-radius: var(--border-radius) !important;
+    border: 2px solid var(--primary);
+    margin: 0 !important;
+    z-index: 10 !important;
 }

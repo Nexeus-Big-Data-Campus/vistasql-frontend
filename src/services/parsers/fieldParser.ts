@@ -152,8 +152,7 @@ function processAllFieldsSelector(term: Node, references: ObjectReference[], joi
 function processInvocationField(term: Node, references: ObjectReference[], joins: Join[], alias: string | undefined): InvocationField {
     const invocation = getDirectChildByType(term, 'invocation')[0];
     const invocationName = getDirectChildByType(invocation, 'object_reference')[0]?.text;
-    const parameters = getNodeTypesInCurrentScope(invocation, 'term');
-    const fieldParameters = parameters.filter(p => p.childForFieldName('value')?.type === 'field');
+    const fieldParameters = getNodeTypesInCurrentScope(invocation, 'term');
     const fields = fieldParameters.map((p) => processField(p, references, joins, alias));
     const fieldReferences = fields.map((f) => f.references).flat();
 
@@ -165,7 +164,7 @@ function processInvocationField(term: Node, references: ObjectReference[], joins
         invocationName,
         references: fieldReferences,
         referencedBy: [],
-        parameters: parameters.map((p) => p.text),
+        parameters: fieldParameters.map((p) => p.text),
         isAmbiguous: false,
         isReferenced: false,
         type: FieldType.INVOCATION,
@@ -177,10 +176,11 @@ function processInvocationField(term: Node, references: ObjectReference[], joins
 function processField(term: Node, references: ObjectReference[], joins: Join[], alias: string | undefined): Field {
     const id = generateHash(term.text);
     const termValue = term.childForFieldName('value');
-
     const objectReference = termValue?.descendantsOfType('object_reference') ?? [];
+
     const { name } = parseObjectReference(objectReference[0]?.text ?? ''); 
     const fieldName = getDirectChildByType(termValue, 'identifier')[0]?.text;
+
     let field: Field = {
         id,
         name: fieldName ?? term.text,
@@ -195,27 +195,23 @@ function processField(term: Node, references: ObjectReference[], joins: Join[], 
         endPosition: term.endPosition,
     }
 
-    const fieldReferences = findReferencesForField(field, name, references, joins, alias ?? term.text);
+    const fieldReferences = findReferencesForField(field, name, references, joins);
     field.references = fieldReferences;
 
     return field;
 }
 
-function findReferencesForField(field: Field, objectReferenceName: string, objectReferences: ObjectReference[], joins: Join[], alias: string | undefined): FieldReference[] {
-    let fieldReferences: FieldReference[] = [];
+function findReferencesForField(field: Field, objectReferenceName: string, objectReferences: ObjectReference[], joins: Join[]): FieldReference[] {
+    const fieldReferences = getReferenceWithRefName(field, objectReferenceName, objectReferences, joins);
 
+    return fieldReferences.length > 0 ? fieldReferences : getFromClauseAndJoinsReferences(field.id, objectReferences, joins);
+}
+
+function getReferenceWithRefName(field: Field, objectReferenceName: string, objectReferences: ObjectReference[], joins: Join[]): FieldReference[] {
+    const fieldReferences: FieldReference[] = [];
+    
     objectReferences.forEach(reference => {
-        if (reference.ref && (objectReferenceName && objectReferenceName === reference.alias) || !objectReferenceName) {
-            reference.ref?.selectClause.fields.forEach(f => {
-                if (f.name === field.name || f.alias === field.name) {
-                    fieldReferences.push(createFieldReference(f.id, reference.ref?.id || '', FieldOrigin.CTE, [...f.references]));
-                    f.isReferenced = true;
-                    f.referencedBy.push(field);
-                }
-            });
-        } else if (objectReferenceName === reference.name || objectReferenceName === reference.alias)  {
-            fieldReferences.push(createFieldReference(field.id, reference.id, FieldOrigin.REFERENCE, []));
-        }
+        fieldReferences.push(...getFieldReferenceFromObjectRef(field, objectReferenceName, reference));
     });
 
     if (fieldReferences.length > 0) {
@@ -224,21 +220,41 @@ function findReferencesForField(field: Field, objectReferenceName: string, objec
 
     joins.forEach(join => {
         if (objectReferenceName && (join.alias === objectReferenceName || join.source.name === objectReferenceName)) {
-            fieldReferences.push(createFieldReference(field.id, join.id, FieldOrigin.JOIN, []))
+            fieldReferences.push(createFieldReference(field.id, join.id, FieldOrigin.JOIN, []));
         }
     });
 
-    if (fieldReferences.length > 0) {
-        return fieldReferences;
-    }
+    return fieldReferences;
+}
 
-    fieldReferences = fieldReferences.concat(getFromClauseAndJoinsReferences(field.id, objectReferences, joins));
+function getFieldReferenceFromObjectRef(field: Field, objectReferenceName: string, reference: ObjectReference): FieldReference[] {
+    let fieldReferences: FieldReference[] = [];
+
+    if (reference.ref && (objectReferenceName && objectReferenceName === reference.alias) || !objectReferenceName) {
+        const allReferenceFields = reference.ref?.selectClause.fields.concat(...reference.ref.unionClauses.map(uc => uc.selectClause.fields)) ?? [];
+
+        allReferenceFields.forEach(f => {
+            if (f.name === field.name || f.alias === field.name) {
+                fieldReferences.push(createFieldReference(f.id, reference.ref?.id || '', FieldOrigin.CTE, [...f.references]));
+                f.isReferenced = true;
+                f.referencedBy.push(field);
+            }
+        });
+    } else if (objectReferenceName === reference.name || objectReferenceName === reference.alias)  {
+        fieldReferences.push(createFieldReference(field.id, reference.id, FieldOrigin.REFERENCE, []));
+    }
 
     return fieldReferences;
 }
 
 function getFromClauseAndJoinsReferences(fieldId: string, references: ObjectReference[], joins: Join[]): FieldReference[] {
     const fieldReferences: FieldReference[] = [];
+    const haveAllJoinsAlias = joins.reduce((acum: boolean, join: Join) => !!join.alias && acum, true);
+    const noAliasReferences = references.filter(ref => !!ref.alias);
+    
+    if (haveAllJoinsAlias && noAliasReferences.length > 0) {
+        return noAliasReferences.map(ref => createFieldReference(fieldId, ref.id, FieldOrigin.REFERENCE, []));
+    }
 
     references.forEach((ref) => {
         fieldReferences.push(createFieldReference(fieldId, ref.id, FieldOrigin.REFERENCE, []));

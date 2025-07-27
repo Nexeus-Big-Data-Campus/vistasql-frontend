@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Background, Controls, ReactFlow, ReactFlowInstance, ReactFlowProvider, useEdgesState, useNodesState } from '@xyflow/react';
+import { Background, Controls, MiniMap, ReactFlow, ReactFlowInstance, ReactFlowProvider, useEdgesState, useNodesState } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Query } from '../../interfaces/query';
 import QueryNode from './nodes/QueryNode';
 import JoinNode from './nodes/JoinNode';
 import ReferenceNode from './nodes/ReferenceNode';
-import { Alert } from '@mui/material';
 import { ARROW_MARKER, FlowNode, useQueryFlow } from '../../hooks/useQueryFlow';
 
 export const FIELD_HIGHLIGHT_CLASS = 'highlight-field';
@@ -63,22 +62,40 @@ export default function QueryDisplay({ queryTree }: Props) {
         });
     };
 
+    function nodeColor(node: any) {
+        switch (node.type) {
+            case 'query':
+                return '#1976d2';  
+            default: 
+                return '#d2c019';
+        }
+    }
+
     return (
         <ReactFlowProvider>
             <ReactFlow
-            id='query-display'
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            fitView
-            onInit={(instance) => setFLowInstance(instance as any)}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onClick={onCanvasClick}
-        >
-            <Controls showInteractive={false}></Controls>
-            <Background></Background>
-        </ReactFlow>
+                id='query-display'
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={nodeTypes}
+                fitView
+                onInit={(instance) => setFLowInstance(instance as any)}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onClick={onCanvasClick}
+                minZoom={0.1}
+            >
+                <Controls showInteractive={false}></Controls>
+                <Background></Background>
+                {nodes.length > 0 &&
+                    <MiniMap
+                    key={`minimap-${nodes.length}`}
+                    nodeColor={nodeColor}
+                    nodeStrokeWidth={2}
+                    zoomable
+                    pannable
+                />}
+            </ReactFlow>
         </ReactFlowProvider>
     )
 }

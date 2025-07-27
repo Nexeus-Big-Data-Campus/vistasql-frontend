@@ -62,7 +62,7 @@ function buildQueryNodeFromTree(rootNode: Node, type: string, name: string | nul
     const cte = processCte(ctes, cteContext); 
     const cteLocalContext = [...cte, ...cteContext];
 
-    const joins = getJoins(rootNode);
+    const joins = getJoins(rootNode, cteLocalContext);
     const fromClause = parseFromClause(rootNode, cteLocalContext);
     const selectClause = parseSelectClause(rootNode, fromClause.references, joins);
     const unionClauses = parseUnionClause(rootNode, cteLocalContext);
@@ -100,10 +100,6 @@ function parseUnionClause(rootNode: Node, cteContext: Query[]): Query[] {
         }
 
         const unionQuery = buildQueryNodeFromTree(operation, 'union', 'union', cteContext);
-        unionQuery.selectClause.fields.forEach(field => {
-            field.isReferenced = true;
-        });
-
         unionQueries.push(unionQuery);
     })
 
@@ -247,7 +243,7 @@ function processCte(ctes: (Node | null)[], cteContext: Query[]): Query[] {
 }
 
 
-function getJoins(node: Node): Join[] {
+function getJoins(node: Node, ctes: Query[]): Join[] {
     const joins: Join[] = [];
     const joinClauses = getNodeTypesInCurrentScope(node, 'join');
 
@@ -270,7 +266,14 @@ function getJoins(node: Node): Join[] {
             return;
         }
 
-        if (source.type === ObjectReferenceType.SUBQUERY) {
+        ctes.forEach(cte => {
+            if (source.name === cte.name) {
+                source.ref = cte;
+                source.type = ObjectReferenceType.CTE;
+            }
+        });
+
+        if (source.type === ObjectReferenceType.SUBQUERY || source.type === ObjectReferenceType.CTE) {
             source.ref?.selectClause.fields.forEach(field => field.isReferenced = true);
         }
 
@@ -302,13 +305,13 @@ function getSelectFields(selectExpression: Node | null, references: ObjectRefere
 
     const allSelectorFields = fields.filter((field) => field.type === FieldType.ALL_SELECTOR);
     allSelectorFields.forEach(selector => {
-       fields.push(...getAllSelectorFields(selector, references)); 
+       fields.push(...getAllSelectorFields(selector, references, joins)); 
     });
     
     return fields;
 }
 
-function getAllSelectorFields(field: Field, references: ObjectReference[]): Field[] {
+function getAllSelectorFields(field: Field, references: ObjectReference[], joins: Join[]): Field[] {
     if (field.type !== FieldType.ALL_SELECTOR) {
         return [];
     }
@@ -317,18 +320,40 @@ function getAllSelectorFields(field: Field, references: ObjectReference[]): Fiel
     const fields: Field[] = [];
 
     references.forEach(reference => {
-        if (reference.ref && (!allSelectorField.selectFrom || allSelectorField.selectFrom.name === reference.name)) {
-            fields.push(...getChildrenFields(reference.ref, allSelectorField.exceptFields));
+        if (reference.ref && (!allSelectorField.selectFrom || allSelectorField.selectFrom.name === reference.name || allSelectorField.selectFrom.alias === reference.alias)) {
+            fields.push(...getChildrenFields(reference.ref, allSelectorField.exceptFields, FieldOrigin.CTE, reference.ref.id));
+        }
+    });
+
+    joins.forEach(join => {
+        if (join.source.ref && join.source.type === ObjectReferenceType.CTE || join.source.type == ObjectReferenceType.SUBQUERY) {
+            fields.push(...getChildrenFields(join.source.ref as Query, allSelectorField.exceptFields, FieldOrigin.JOIN, join.id));
         }
     });
 
     return fields;
 }
 
-function getChildrenFields(node: Query, exceptFields: Field[]): Field[] {
-    return node.selectClause.fields
+function getAllFieldsFromQuery(node: Query): Field[] {
+    const fields: Field[] = [];
+    fields.push(...node.unionClauses.map(uc => getAllFieldsFromQuery(uc)).flat());
+    fields.push(...node.selectClause.fields);
+    
+    node.joins.forEach(join => {
+        const sourceRef = join.source.ref;
+        if (sourceRef && join.source.type === ObjectReferenceType.CTE || join.source.type === ObjectReferenceType.SUBQUERY) {
+            fields.push(...getAllFieldsFromQuery(sourceRef as Query));
+        }
+    });
+
+    return fields;
+}
+
+function getChildrenFields(node: Query, exceptFields: Field[], fieldOrigin: FieldOrigin, referenceNodeId: string): Field[] {
+    const allFields = getAllFieldsFromQuery(node);
+    return allFields
         .filter((f) => f.type !== FieldType.ALL_SELECTOR)
-        .filter(f => !exceptFields.some(ef => ef.name === f.name && (ef.references.length === 0 || ef.references.some(r => r.nodeId === node.id))))
+        .filter(f => !exceptFields.some(ef => (ef.alias === f.alias || ef.name === f.name) && (ef.references.length === 0 || ef.references.some(r => r.nodeId === node.id))))
         .map((f) => {
             f.isReferenced = true;
             return {
@@ -337,8 +362,8 @@ function getChildrenFields(node: Query, exceptFields: Field[]): Field[] {
                 isReferenced: false,
                 references: [{
                     fieldId: f.id,
-                    nodeId: node.id,
-                    origin: FieldOrigin.CTE,
+                    nodeId: referenceNodeId,
+                    origin: fieldOrigin,
                     parents: [...f.references]
                 }],
             };

@@ -65,6 +65,11 @@ export default function QueryNode({ data, resetHighlight }: Props) {
                 field.classList.add(FIELD_HIGHLIGHT_CLASS);
             });
         });
+
+        const editorField = document.querySelector(`.editor-select-field[data-fieldid="${field.id}"`);
+        if (editorField) {
+            editorField.scrollIntoView({behavior: 'smooth', block: 'center'});
+        }
     };
 
     const highlightEdges = (field: Field) => {

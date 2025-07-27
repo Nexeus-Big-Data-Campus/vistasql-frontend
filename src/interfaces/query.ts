@@ -47,4 +47,5 @@ export interface OrderByClause {
 export enum ObjectReferenceType {
     TABLE,
     SUBQUERY,
+    CTE
 }
