@@ -41,6 +41,19 @@
     "errorMessage": "Login error.",
     "connectionErrorMessage": "Connection error or incorrect credentials.",
     "createAccountButton": "Create Account"
+  },
+  "feedbackModal": {
+    "title": "Send us your feedback",
+    "subtitle": "Help us make our service better by sendig us your comments or reporting bugs.",
+    "feebackType": "Feedback Type",
+    "commentType": "Feedback message",
+    "commentLabel": "Help us improve",
+    "bugType": "Bug report",
+    "bugLabel": "What went wrong?",
+    "success": "Your message has been sent. Thank you for your help!"
+  },
+  "api": {
+    "error": "Something went wrong. Try again later."
   }
   
 }

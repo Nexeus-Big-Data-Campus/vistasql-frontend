@@ -35,13 +35,26 @@
   },
   "loginForm": {
     "title": "Iniciar Sesión",
-    "subtitle": "Ingresa tus credenciales para iniciar sesión",
+    "subtitle": "Accede a tu cuenta",
     "backButton": "Atrás",
     "submitButton": "Entrar",
     "successMessage": "Inicio de sesión exitoso.",
     "errorMessage": "Error en el inicio de sesión.",
     "connectionErrorMessage": "Error de conexión o credenciales incorrectas.",
     "createAccountButton": "Crear cuenta"
+  },
+  "feedbackModal": {
+    "title": "Danos tu opinión",
+    "subtitle": "Ayúdanos a mejorar nuestro servicio con tu opinión o reportando errores.",
+    "feebackType": "Tipo de mensaje",
+    "commentType": "Feedback",
+    "commentLabel": "Ayúdanos a mejorar",
+    "bugType": "Reporte de error",
+    "bugLabel": "¿Qué ha ido mal?",
+    "success": "Hemos recibido tu mensaje. ¡Gracias por tu ayuda!"
+  },
+  "api": {
+    "error": "Algo ha salido mal. Inténtalo de nuevo más tarde."
   }
   
 }

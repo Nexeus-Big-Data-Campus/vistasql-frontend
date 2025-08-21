@@ -85,3 +85,7 @@
     margin: 0 !important;
     z-index: 10 !important;
 }
+
+.react-flow__controls {
+    margin: 0 !important;
+}

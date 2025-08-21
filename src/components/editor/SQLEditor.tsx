@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
 import "prismjs/components/prism-sql";
@@ -6,10 +6,13 @@ import { Query } from "../../interfaces/query";
 import parseQuery  from "../../services/parsers/queryParser";
 import { Alert } from "@mui/material";
 import { Field } from "../../interfaces/field";
+import { Project } from "../../interfaces/user";
 
 interface Props {
+    activeProject: Project | null;
     queryTree: Query[];
     onQueryTreeChanged: (queryTree: Query[]) => void;
+    onCodeChange: (code: string) => void;
 }
 
 function EmptyQueryAlert({queryLength} : {queryLength: number}) {
@@ -22,7 +25,7 @@ function EmptyQueryAlert({queryLength} : {queryLength: number}) {
     );
 }
 
-export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
+export default function SQLEditor({ queryTree, onQueryTreeChanged, activeProject, onCodeChange }: Props) {
     const [code, setCode] = useState('');
 
     const [highlightCode, setHighlightCode] = useState('');
@@ -33,11 +36,9 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
 
     const TEXTAREA_ID = 'sql-editor-textarea';
 
-    const QUERY_STORAGE_KEY = 'sqlEditorQuery'; 
-
     useEffect(() => {
         focusTextArea();
-        setCode(localStorage.getItem(QUERY_STORAGE_KEY) ?? '');
+        setCode(activeProject?.code ?? '');
     }, []);
 
     useEffect(() => {
@@ -48,7 +49,7 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
         updateHighlightcode(code, []);
         setDebounceTimer(setTimeout(() => {
             updateQueryTree(code);
-            localStorage.setItem(QUERY_STORAGE_KEY, code);
+            onCodeChange(code);
         }, CODE_DEBOUNCE_TIME))
     }, [code]);
 
@@ -60,7 +61,6 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged }: Props) {
             textAreaElement.focus();
         }
     };
-
 
     const getQueryTreeFields = (queryTree: Query[]): Field[] => {
         const fields: Field[] = [];

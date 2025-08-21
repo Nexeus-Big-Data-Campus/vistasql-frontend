@@ -21,7 +21,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { login, user } = useContext(UserContext);
   const { t } = useTranslation();
-  const apiService = new ApiService();
+  const apiService = ApiService.getInstance();
   const navigate = useNavigate();
 
   const handleError = (error: string) => {
@@ -36,12 +36,12 @@ export default function LoginPage() {
 
     const response = await apiService.login(email, password);
 
-    if (response.error) {
-      handleError(response.error);
+    if ("error" in response) {
+      handleError(`${response.status}`);
       return;
     }
 
-    const token = response.data.access_token;
+    const token = response.access_token;
 
     if (!token) {
       setMessage(t("Credenciales inválidas"));
@@ -124,11 +124,11 @@ export default function LoginPage() {
           </Alert>
         )}
 
-        <Link to="/signin">
+        {/* <Link to="/signin">
           <Button variant="text" fullWidth sx={{ mt: 2, textTransform: "none" }}>
             {t("loginForm.createAccountButton")}
           </Button>
-        </Link>
+        </Link> */}
       </Paper>
     </Box>
   );

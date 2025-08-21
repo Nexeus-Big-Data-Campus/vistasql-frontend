@@ -41,12 +41,12 @@ export default function RegisterPage() {
 
     const response = await apiService.signin("", email, password);
 
-    if(response.error) {
-      handleError(response.error);
+    if("error" in response) {
+      handleError(`${response.status}`);
       return;
     }
 
-    const token = response.data.access_token;
+    const token = response.access_token;
     login(token);
     navigate("/app/editor");
   };

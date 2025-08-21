@@ -4,33 +4,7 @@ import { EdgeMarker, MarkerType, XYPosition } from '@xyflow/react';
 import { Query, ObjectReference, ObjectReferenceType } from '../interfaces/query';
 import { Join } from '../interfaces/join';
 import { Field, FieldOrigin, FieldReference } from '../interfaces/field';
-
-//TODO: MOVE TO INTERFACE FILE
-export enum FlowNodeType {
-    Query = 'query',
-    Join = 'join',
-    Reference = 'reference'
-}
-
-export interface FlowNode {
-    id: string;
-    type: FlowNodeType;
-    data: Query | Join | ObjectReference;
-    position: XYPosition;
-    parent?: string;
-    edgelLabel?: string;
-    width?: number;
-    height?: number;
-}
-
-export interface FlowEdge {
-    id: string,
-    source: string,
-    target: string,
-    sourceHandle: string,
-    targetHandle: string,
-    markerEnd: EdgeMarker
-}
+import { FlowEdge, FlowNode, FlowNodeType } from '../interfaces/flow';
 
 export const ARROW_MARKER: EdgeMarker = {
     type: MarkerType.ArrowClosed,
