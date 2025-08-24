@@ -21,5 +21,6 @@ export interface FlowEdge {
     target: string,
     sourceHandle: string,
     targetHandle: string,
-    markerEnd: EdgeMarker
+    markerEnd: EdgeMarker,
+    minLnegth?: number;
 }

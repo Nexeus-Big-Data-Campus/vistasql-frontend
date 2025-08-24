@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Background, Controls, MiniMap, ReactFlow, ReactFlowInstance, ReactFlowProvider, useEdgesState, useNodesState } from '@xyflow/react';
+import { Background, BackgroundVariant, Controls, MiniMap, ReactFlow, ReactFlowInstance, ReactFlowProvider, useEdgesState, useNodesState } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Query } from '../../interfaces/query';
 import QueryNode from './nodes/QueryNode';
@@ -12,11 +12,23 @@ export const EDGE_HIGHLIGHT_CLASS = 'highlight-edge';
 export const EDGE_AMBIGUOUS_CLASS = 'highlight-ambiguous-edge';
 
 interface Props {
-    queryTree: Query[]
+    queryTree: Query[],
+    options: QueryDisplayOptions,
 }
 
-export default function QueryDisplay({ queryTree }: Props) {
+export interface QueryDisplayOptions {
+    hideMinimap?: boolean,
+    hideControls?: boolean,
+    minZoom?: number,
+}
 
+const defaultOptions: QueryDisplayOptions = {
+    hideMinimap: false,
+    hideControls: false,
+    minZoom: 0.5,
+}
+
+export default function QueryDisplay({ queryTree, options }: Props) {
     const [flowInstance, setFLowInstance] = useState<ReactFlowInstance<any, any> | undefined>();
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [nodes, setNodes] = useNodesState([]);
@@ -31,6 +43,11 @@ export default function QueryDisplay({ queryTree }: Props) {
     useEffect(() => {
         setNodes(memoizedNodes as any);
         setEdges(memoizedEdges as any);
+
+        options = {
+            ...defaultOptions,
+            ...options,
+        };
     }, [memoizedNodes, memoizedEdges]);
 
     const onNodesChange = () => {
@@ -83,11 +100,13 @@ export default function QueryDisplay({ queryTree }: Props) {
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onClick={onCanvasClick}
-                minZoom={0.1}
+                minZoom={options.minZoom ?? defaultOptions.minZoom}
             >
-                <Controls showInteractive={false}></Controls>
-                <Background></Background>
-                {nodes.length > 0 &&
+                {!options.hideControls && 
+                    <Controls showInteractive={false}></Controls>
+                }
+                <Background variant={BackgroundVariant.Lines}></Background>
+                {nodes.length > 0 && !options.hideMinimap &&
                     <MiniMap
                     key={`minimap-${nodes.length}`}
                     nodeColor={nodeColor}

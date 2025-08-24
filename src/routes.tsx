@@ -1,10 +1,10 @@
 import { createBrowserRouter } from 'react-router';
 
 //Pages
-import Home from './pages/Home';
-import MainEditor from './pages/MainEditor';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
+import Home from './pages/public/Home';
+import MainEditor from './pages/app/MainEditor';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
 //LayOut
 import AppLayout from './pages/layouts/AppLayout';
 import PublicLayout from './pages/layouts/PublicLayout';

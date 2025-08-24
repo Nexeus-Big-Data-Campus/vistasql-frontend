@@ -240,6 +240,17 @@ function getFieldReferenceFromObjectRef(field: Field, objectReferenceName: strin
                 f.referencedBy.push(field);
             }
         });
+
+        // Try to match to * selector
+        if (fieldReferences.length == 0) {
+            const allSellector = allReferenceFields.find(field => field.type === FieldType.ALL_SELECTOR);
+
+            if (allSellector) {
+                fieldReferences.push(createFieldReference(allSellector.id, reference.ref?.id || '', FieldOrigin.CTE, [...allSellector.references]));
+                allSellector.isReferenced = true;
+                allSellector.referencedBy.push(field);
+            }
+        }
     } else if (objectReferenceName === reference.name || objectReferenceName === reference.alias)  {
         fieldReferences.push(createFieldReference(field.id, reference.id, FieldOrigin.REFERENCE, []));
     }

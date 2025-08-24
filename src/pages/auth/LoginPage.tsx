@@ -9,10 +9,10 @@ import {
   Box,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { ApiService } from "../services/ApiService";
+import { ApiService } from "../../services/ApiService";
 import ErrorIcon from "@mui/icons-material/Error";
 import { Link, Navigate, useNavigate } from "react-router";
-import { UserContext } from "../contexts/UserContext";
+import { UserContext } from "../../contexts/UserContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

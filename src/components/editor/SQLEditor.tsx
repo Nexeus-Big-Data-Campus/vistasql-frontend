@@ -1,18 +1,24 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef, useImperativeHandle } from "react";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
 import "prismjs/components/prism-sql";
 import { Query } from "../../interfaces/query";
-import parseQuery  from "../../services/parsers/queryParser";
+import parseQuery, { loadTreeSitterParser }  from "../../services/parsers/queryParser";
 import { Alert } from "@mui/material";
 import { Field } from "../../interfaces/field";
 import { Project } from "../../interfaces/user";
+
+export interface EditorHandle {
+    updateCode: (c: string) => void;
+}
 
 interface Props {
     activeProject: Project | null;
     queryTree: Query[];
     onQueryTreeChanged: (queryTree: Query[]) => void;
     onCodeChange: (code: string) => void;
+    ref?: React.Ref<EditorHandle>;
+    disabled?: boolean;
 }
 
 function EmptyQueryAlert({queryLength} : {queryLength: number}) {
@@ -25,7 +31,7 @@ function EmptyQueryAlert({queryLength} : {queryLength: number}) {
     );
 }
 
-export default function SQLEditor({ queryTree, onQueryTreeChanged, activeProject, onCodeChange }: Props) {
+export default function SQLEditor({ queryTree, onQueryTreeChanged, activeProject, onCodeChange, ref, disabled = false }: Props) {
     const [code, setCode] = useState('');
 
     const [highlightCode, setHighlightCode] = useState('');
@@ -36,9 +42,16 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged, activeProject
 
     const TEXTAREA_ID = 'sql-editor-textarea';
 
+    const innerRef = useRef<EditorHandle>({
+        updateCode(code: string) {
+            setCode(code);
+        }
+    });
+
+    useImperativeHandle(ref, () => innerRef.current, [innerRef]);
+
     useEffect(() => {
-        focusTextArea();
-        setCode(activeProject?.code ?? '');
+        init();
     }, []);
 
     useEffect(() => {
@@ -53,6 +66,10 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged, activeProject
         }, CODE_DEBOUNCE_TIME))
     }, [code]);
 
+    const init = async () => {
+        focusTextArea();
+        setCode(activeProject?.code ?? '');
+    }
 
     const focusTextArea = () => {
         const textAreaElement = document.getElementById(TEXTAREA_ID);
@@ -139,6 +156,7 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged, activeProject
             <div className="flex-1 overflow-auto relative">
                 <Editor
                     id="sql-editor"
+                    disabled={disabled}
                     textareaId={TEXTAREA_ID}
                     className="inset-shadow-sm min-h-full bg-white "
                     textareaClassName="!focus:border-1 !rounded-0 min-h-full"

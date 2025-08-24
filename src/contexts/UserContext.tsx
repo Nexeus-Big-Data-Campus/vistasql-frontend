@@ -59,6 +59,7 @@ export function UserProvider({ children }: Props) {
 
     if (!storedToken) {
       logout();
+      setIsLoading(false);
       return;
     }
 

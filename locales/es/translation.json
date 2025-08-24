@@ -4,7 +4,11 @@
     "title": "Iniciar Sesión"
   },
   "homePage": {
-    "goToEditor": "Ir al Editor"
+    "title": "Convierte SQL complejo en claridad visual",
+    "subtitle": "Depura más rápido, descubre información con mayor rapidez y optimiza la colaboración con una herramienta de visualización diseñada para ingenieros de big data.",
+    "tryDemoCTA": "Probar la Beta",
+    "goToEditor": "Ir al Editor",
+    "demoExample": "Ejemplo"
   },
   "header": {
     "myProfile": "Mi perfil",

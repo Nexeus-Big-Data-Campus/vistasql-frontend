@@ -6,6 +6,7 @@ import { AppThemeProvider } from "../../theme/ThemeContext";
 function VistaApp() {
   const { user, loading } = useUser();
 
+  console.log('app', loading);
   if(loading) {
     return '';
   }

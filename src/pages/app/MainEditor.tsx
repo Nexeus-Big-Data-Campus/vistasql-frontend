@@ -1,12 +1,11 @@
-import { useState, useEffect, useContext } from "react";
-import SQLEditor from "../components/editor/SQLEditor";
-import QueryDisplay from "../components/display/QueryDisplay";
-import Grid from "@mui/material/Grid";
-import { Query } from "../interfaces/query";
-import { Box } from "@mui/material";
-import Toolbar from "../components/display/Toolbar";
-import { UserContext } from "../contexts/UserContext";
-import { ApiService } from "../services/ApiService";
+import { useState, useContext } from "react";
+import { Query } from "../../interfaces/query";
+import { UserContext } from "../../contexts/UserContext";
+import { ApiService } from "../../services/ApiService";
+import { Box, Grid } from "@mui/material";
+import SQLEditor from "../../components/editor/SQLEditor";
+import QueryDisplay from "../../components/display/QueryDisplay";
+import Toolbar from "../../components/display/Toolbar";
 
 const initialQueryTree: Query[] = [];
 
@@ -36,7 +35,7 @@ export default function MainEditor() {
                 <Grid size={{xs: 12, md: 8}}>
                     <Box sx={{display: 'flex', flexDirection: 'column', height: '100%'}}>
                         <Box sx={{flex: 1, padding: '1rem'}}>
-                            <QueryDisplay queryTree={queryTree}/>
+                            <QueryDisplay queryTree={queryTree} options={{hideControls: false, hideMinimap: false, minZoom: 0.1}}/>
                         </Box>
                         <Toolbar></Toolbar>
                     </Box>

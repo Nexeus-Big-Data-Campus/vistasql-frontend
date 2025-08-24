@@ -2,25 +2,44 @@ import murmur from "murmurhash-js";
 import {Language, Node, Parser} from "web-tree-sitter";
 import { Join } from "../../interfaces/join";
 import { LexicalError } from "../../interfaces/error";
-import { AllSelectorField, Field, FieldOrigin, FieldReference, FieldType, InvocationField } from "../../interfaces/field";
-import { getDirectChildByType, getNodeTypesInCurrentScope, findAllSubqueries, generateHash, parseObjectReference } from "./utils";
+import { AllSelectorField, Field, FieldOrigin, FieldType } from "../../interfaces/field";
+import { getDirectChildByType, getNodeTypesInCurrentScope, generateHash, parseObjectReference } from "./utils";
 import { processColumn } from "./fieldParser";
 import { FromClause, Query, SelectClause, ObjectReference, ObjectReferenceType } from "../../interfaces/query";
+import { al } from "react-router/dist/development/register-DCE0tH5m";
 
 
 let parser: Parser;
 
-// Initialize the tree-sitter parser
 Parser.init({
     locateFile(scriptName: string, scriptDirectory: string) {
         return '/' + scriptName;
-      },
+    },
 }).then(async () => {
     console.log('Tree-sitter initialized');
     parser = new Parser();
     const SQL = await Language.load('/tree-sitter-sql.wasm');
+    
     parser.setLanguage(SQL);
 });
+
+// Initialize the tree-sitter parser
+export async function loadTreeSitterParser(): Promise<void> {
+    return new Promise((resolve, reject) => {
+        Parser.init({
+            locateFile(scriptName: string, scriptDirectory: string) {
+                return '/' + scriptName;
+            },
+        }).then(async () => {
+            console.log('Tree-sitter initialized');
+            parser = new Parser();
+            const SQL = await Language.load('/tree-sitter-sql.wasm');
+            
+            parser.setLanguage(SQL);
+            resolve();
+        });
+    });
+}
 
 
 // Returns a tree with root in the main select statement using tree-sitter
@@ -145,7 +164,8 @@ function getFromReferences(node: Node, ctes: Query[]): ObjectReference[] {
             return;
         }
 
-        const reference = parseRelation(relation);
+        const alias = relation.childForFieldName('alias');
+        const reference = parseRelation(relation, alias?.text ?? null);
 
         if(!reference) {
             return;
@@ -163,7 +183,7 @@ function getFromReferences(node: Node, ctes: Query[]): ObjectReference[] {
     return references;
 }
 
-function parseRelation(relation: Node): ObjectReference | null {
+function parseRelation(relation: Node, alias: string | null): ObjectReference | null {
     const relationChild = relation.firstChild;
 
     if(!relationChild) {
@@ -176,14 +196,14 @@ function parseRelation(relation: Node): ObjectReference | null {
         case 'object_reference':
             return getObjectRelationReference(relation);
         case 'subquery':
-            return getSubqueryRelation(relationChild);
+            return getSubqueryRelation(relationChild, alias);
         default:
             return null; 
     }
 }
 
-function getSubqueryRelation(relation: Node): ObjectReference {
-    const query = buildQueryNodeFromTree(relation, 'subquery');
+function getSubqueryRelation(relation: Node, alias: string | null): ObjectReference {
+    const query = buildQueryNodeFromTree(relation, 'subquery', alias);
 
     return {
         id: generateHash(query.code),
