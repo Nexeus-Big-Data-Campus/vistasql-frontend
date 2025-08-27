@@ -138,7 +138,7 @@ export function UserProvider({ children }: Props) {
     login,
     logout,
     setActiveProject,
-  }), [user]);
+  }), [user, activeProject]);
 
   return (
     <UserContext.Provider value={value}>
