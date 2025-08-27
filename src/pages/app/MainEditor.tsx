@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { Query } from "../../interfaces/query";
 import { UserContext } from "../../contexts/UserContext";
 import { ApiService } from "../../services/ApiService";
@@ -6,15 +6,15 @@ import { Box, Grid } from "@mui/material";
 import SQLEditor from "../../components/editor/SQLEditor";
 import QueryDisplay from "../../components/display/QueryDisplay";
 import Toolbar from "../../components/display/Toolbar";
+import { useTreeSitterLoader } from "../../hooks/useTreeSitterLoader";
 
 const initialQueryTree: Query[] = [];
 
 export default function MainEditor() {
     const [queryTree, setQueryTree] = useState<Query[]>(initialQueryTree);
-
     const {activeProject, jwtToken} = useContext(UserContext);
-
     const apiService = ApiService.getInstance();
+    const isTreeSitterLoaded = useTreeSitterLoader();
 
     const onCodeChange = (code: string): void => {
         if (!jwtToken || !activeProject) {
@@ -22,6 +22,10 @@ export default function MainEditor() {
         }
 
         apiService.updateProject({id: activeProject?.id, code: code}, jwtToken);
+    }
+
+    if (!isTreeSitterLoaded) {
+        return <></>
     }
 
     return (

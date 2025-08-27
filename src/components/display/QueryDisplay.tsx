@@ -6,6 +6,7 @@ import QueryNode from './nodes/QueryNode';
 import JoinNode from './nodes/JoinNode';
 import ReferenceNode from './nodes/ReferenceNode';
 import { ARROW_MARKER, FlowNode, useQueryFlow } from '../../hooks/useQueryFlow';
+import { loadTreeSitterParser } from '../../services/parsers/queryParser';
 
 export const FIELD_HIGHLIGHT_CLASS = 'highlight-field';
 export const EDGE_HIGHLIGHT_CLASS = 'highlight-edge';

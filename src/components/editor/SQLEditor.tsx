@@ -3,7 +3,7 @@ import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
 import "prismjs/components/prism-sql";
 import { Query } from "../../interfaces/query";
-import parseQuery, { loadTreeSitterParser }  from "../../services/parsers/queryParser";
+import parseQuery from "../../services/parsers/queryParser";
 import { Alert } from "@mui/material";
 import { Field } from "../../interfaces/field";
 import { Project } from "../../interfaces/user";
@@ -19,16 +19,6 @@ interface Props {
     onCodeChange: (code: string) => void;
     ref?: React.Ref<EditorHandle>;
     disabled?: boolean;
-}
-
-function EmptyQueryAlert({queryLength} : {queryLength: number}) {
-    if (queryLength > 0) return;
-
-    return (
-        <Alert severity='info' sx={{position: 'absolute', bottom: '15px', width: '95%', right: '2.5%', margin: '0 auto'}}>
-            Type your Query in the editor to update the visualization.
-        </Alert>
-    );
 }
 
 export default function SQLEditor({ queryTree, onQueryTreeChanged, activeProject, onCodeChange, ref, disabled = false }: Props) {
@@ -66,7 +56,7 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged, activeProject
         }, CODE_DEBOUNCE_TIME))
     }, [code]);
 
-    const init = async () => {
+    const init = () => {
         focusTextArea();
         setCode(activeProject?.code ?? '');
     }
@@ -88,7 +78,6 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged, activeProject
 
             queries.push(...query?.cte ?? []);
             queries.push(...query?.unionClauses ?? []);
-
             fields.push(...query?.selectClause.fields ?? []);
         }
 
@@ -170,7 +159,11 @@ export default function SQLEditor({ queryTree, onQueryTreeChanged, activeProject
                     }}
                 />
 
-                <EmptyQueryAlert queryLength={code.length}></EmptyQueryAlert>
+                {code.length === 0 && 
+                    <Alert severity='info' sx={{position: 'absolute', bottom: '15px', width: '95%', right: '2.5%', margin: '0 auto'}}>
+                        Type your Query in the editor to update the visualization.
+                    </Alert>
+                }
             </div>
         </div>
     );

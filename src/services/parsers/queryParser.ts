@@ -6,22 +6,8 @@ import { AllSelectorField, Field, FieldOrigin, FieldType } from "../../interface
 import { getDirectChildByType, getNodeTypesInCurrentScope, generateHash, parseObjectReference } from "./utils";
 import { processColumn } from "./fieldParser";
 import { FromClause, Query, SelectClause, ObjectReference, ObjectReferenceType } from "../../interfaces/query";
-import { al } from "react-router/dist/development/register-DCE0tH5m";
-
 
 let parser: Parser;
-
-Parser.init({
-    locateFile(scriptName: string, scriptDirectory: string) {
-        return '/' + scriptName;
-    },
-}).then(async () => {
-    console.log('Tree-sitter initialized');
-    parser = new Parser();
-    const SQL = await Language.load('/tree-sitter-sql.wasm');
-    
-    parser.setLanguage(SQL);
-});
 
 // Initialize the tree-sitter parser
 export async function loadTreeSitterParser(): Promise<void> {
@@ -40,7 +26,6 @@ export async function loadTreeSitterParser(): Promise<void> {
         });
     });
 }
-
 
 // Returns a tree with root in the main select statement using tree-sitter
 // and the SQL grammar
