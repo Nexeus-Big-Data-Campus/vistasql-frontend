@@ -36,7 +36,7 @@ export default function MainEditor() {
                         <SQLEditor queryTree={queryTree} onQueryTreeChanged={setQueryTree} onCodeChange={onCodeChange} activeProject={activeProject}/>
                     }
                 </Grid>
-                <Grid size={{xs: 12, md: 8}}>
+                <Grid size={{xs: 12, md: 8}} sx={{height: '100%'}}>
                     <Box sx={{display: 'flex', flexDirection: 'column', height: '100%'}}>
                         <Box sx={{flex: 1, padding: '1rem'}}>
                             <QueryDisplay queryTree={queryTree} options={{hideControls: false, hideMinimap: false, minZoom: 0.1}}/>
