@@ -104,8 +104,8 @@ export default function Home() {
     
     return (
         <>
-            <header id="hero-section" className="flex p-0 md:flex-row w-full min-h-[300px] bg-white pb-6">
-                <div id="title-container" className="flex flex-col align-center text-left w-full md:w-1/2 my-auto px-6">
+            <header id="hero-section" className="flex md:flex-row w-full min-h-[300px] bg-white pt-0 pb-6">
+                <div id="title-container" className="flex flex-col align-center text-left w-full md:w-1/2 my-auto pl-2">
                     <div className="w-3/4 mx-auto">
                         <h1 className="font-bold text-[2rem] text-primary mb-1">{t("homePage.title")}</h1>
                         <h2 className="text-md">{t("homePage.subtitle")}</h2>
@@ -119,12 +119,10 @@ export default function Home() {
                 </div>
             </header>
 
-            <section id="demo-section" className="w-full bg-white p-4 h-content">
+            <section id="demo-section" className="w-full bg-white p-4 pb-8 h-content">
                 <header className="text-center py-4 mb-2">
-                    <h2 className="text-[1.45rem] text-primary mb-6">Write SQL. See It Come to Life.</h2>
-
-
-                    <div className="flex w-100 justify-center align-center mt-4 gap-2 mx-auto">
+                    <h2 className="text-[1.45rem] text-gray-600 mb-6 font-bold uppercase">Write SQL. See It Come to Life</h2>
+                    <div className="flex w-1/2 sm:w-100 flex-col sm:flex-row justify-center align-center mt-4 gap-2 mx-auto">
                         {demoCodeExamples.map((_, index) => 
                             <Button variant={index === currentExample ? "contained" : "outlined"} onClick={() => selectExample(index)}>
                                 {t("homePage.demoExample")} {index + 1}
@@ -132,14 +130,31 @@ export default function Home() {
                         )}
                     </div>
                 </header>
-                <main id="demo-editor-container" className="max-w-[1080px] mx-auto h-100 flex flex-col-reverse md:flex-row align-center justify-center mt-2 gap-4">
-                    <div className="h-full max-h-[450px] w-full md:w-1/2">
+                <main id="demo-editor-container" className="max-w-[1080px] h-400px mx-auto flex flex-col-reverse md:flex-row align-center justify-center my-4 gap-4">
+                    <div className="h-full w-full md:w-1/2">
                         <DemoEditor onQueryTreeChanged={(qt) => {setDemoQueryTree(qt)}} code={demoCode}></DemoEditor>
                     </div>
-                    <div className="h-full w-full md:w-1/2 mb-4 md:mb-0">
+                    <div className="h-[350px] md:h-auto w-full md:w-1/2 mb-4 md:mb-0">
                         <QueryDisplay queryTree={demoQueryTree} options={demoDisplayOpts}></QueryDisplay>
                     </div>
                 </main>
+            </section>
+
+            <section id="supported-languages-section" className="p-4 bg-gray-100 text-center">
+                <h2 className="text-[1.45rem] text-gray-600 my-6 uppercase font-bold">Supported SQL variants</h2>
+                <div className="max-w-[1080px] w-full mx-auto flex flex-col md:flex-row items-center justify-center gap-[5rem]">
+                    <div className="rounded w-1/2 md:w-1/5">
+                        <img src="/images/mysql_logo.png" alt="MySQL logo"></img>
+                    </div>
+
+                    <div className="rounded w-1/2 md:w-1/5">
+                        <img src="/images/postgresql_logo.png" alt="PostgreSQL logo"></img>
+                    </div>
+
+                    <div className="rounded w-1/2 md:w-1/5">
+                        <img src="/images/bigquery_logo.png" alt="BigQuery SQL logo"></img>
+                    </div>
+                </div>
             </section>
         </>
     );

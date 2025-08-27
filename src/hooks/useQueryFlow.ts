@@ -137,10 +137,6 @@ const getAllNodesFromTree = (node: Query, parentHash?: string): FlowNode[] => {
         treeNodes.push(...getReferenceNode(reference, node.id));
     });
 
-    /* node.unionClauses.forEach(union => {
-        treeNodes.push(...getAllNodesFromTree(union, `${node.id}`));
-    }); */
-
     return treeNodes;
 };
 
